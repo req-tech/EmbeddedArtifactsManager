@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Module specificationVersion="1.3">
-<ModulePrefs title="Link Converter" height="130" scrolling="true">
+<ModulePrefs title="Embedded Artifacts Manager" height="130" scrolling="true">
 	<Require feature="com.ibm.rdm.rm.api"/>
 	<Require feature="dynamic-height"/>
 	
@@ -22,10 +22,7 @@
 				<script src="js/bootstrap.bundle.min.js"></script>
 
                 <!-- Custom JS-code -->
-				<script type="text/javascript" src="./js/main2.js" charset="utf-8"></script> 
-
-
-
+				<script type="text/javascript" src="./js/main.js" charset="utf-8"></script> 
 
 
                 <style>
