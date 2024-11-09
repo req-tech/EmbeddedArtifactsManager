@@ -22,7 +22,7 @@
 				<script src="js/bootstrap.bundle.min.js"></script>
 
                 <!-- Custom JS-code -->
-				<script type="text/javascript" src="./js/main.js" charset="utf-8"></script> 
+				<script type="text/javascript" src="./js/main2.js" charset="utf-8"></script> 
 
 
 
@@ -87,21 +87,24 @@
 						<hr style='padding: 0 !important; margin: 0 !important;'/>
 
 					</div>
-				<div id="buttonContainer">
-				<button style="font-size:12px; id="readLinksButton" onclick="readLinksButton_onclick()">Read Links</button>
-				<button style="font-size:12px; id="readAllLinksButton" onclick="readAllLinksButtonOnClick()">Read whole Module</button>
+				<div style="font-size:12px; id="buttonContainer">
+				Read links from:
+				<button style="font-size:12px; id="readAllLinksButton" onclick="readAllLinksButtonOnClick()">Whole Module</button>
+				<button style="font-size:12px; id="readLinksButton" onclick="readLinksButton_onclick()">Selected Items only</button>
+				<br>
 				</div>
+	
+				<!-- Div for additional messages or loading indicator -->
+				<div id="statusContainer" style="font-size:12px;"> </div>
 
 				<div id="linkContainer">
 				<!-- This is where the form with links will be appended -->
 				</div>
-	
-				<!-- Div for additional messages or loading indicator -->
-				<div id="statusContainer" style="font-size:12px;">Select Items to read links or Get links from Module</div>
 
+				<!-- Div for Link conversion buttons - Function values is whether to delete Module Links -->
 				<div style="display: none;" id="convertButtonContainer">
-				<button style="font-size:12px; id="convertLinksButton" onclick="convertLinksButtonOnClick('convert')">Convert to Base Links</button>
-				<button style="font-size:12px; id="createBaseLinksButton" onclick="convertLinksButtonOnClick('create')">Create Base Links</button>
+				<button style="font-size:12px; id="convertLinksButton" onclick="convertLinksButtonOnClick(true)">Convert to Base Links</button>
+				<button style="font-size:12px; id="createBaseLinksButton" onclick="convertLinksButtonOnClick(false)">Add Base Links</button>
 				</div>
 
 				<div id="reloadContainer">
