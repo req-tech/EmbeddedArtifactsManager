@@ -76,18 +76,12 @@
 					</div>
 					
 					<div style="font-size:12px; display: none;" id='settings_div'>
-						<b><span id='str008'>  </span> </b><br/>
-                        <label for="apiKeyInput" style="font-size:12px;">OpenAI API key</label>
-                        <input type="password" id="apiKeyInput" style="width: 100%;" placeholder="API Key"/>
-                        <button type="button" style="font-size:12px;" onclick="saveApiKeyAsCookie();">Save Key on this computer as Cookie</button>
-                        <button type="button" style="font-size:12px;" onclick="removeApiKeyCookie();">Remove Cookie</button>
-						<hr style='padding: 0 !important; margin: 0 !important;'/>
 
 					</div>
-				<div style="font-size:12px; id="buttonContainer">
-				Read links from:
-				<button style="font-size:12px; id="readAllLinksButton" onclick="readAllLinksButtonOnClick()">Whole Module</button>
-				<button style="font-size:12px; id="readLinksButton" onclick="readLinksButton_onclick()">Selected Items only</button>
+				<div style="font-size:12px;" id="buttonContainer">
+				Create links for Embedded Artifacts:
+				<button style="font-size:12px; display: none;" id="readAllLinksButton" onclick="readAllLinksButtonOnClick()">Whole Module</button>
+				<button style="font-size:12px; background-color:0d63fd; border: 0d63fd; color:white;" id="readLinksButton" onclick="readLinksButton_onclick()">Selected Items only</button>
 				<br>
 				</div>
 	

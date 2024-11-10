@@ -53,31 +53,97 @@ function toggleVisibility(divId, buttonId, showText, hideText) {
 // Function to handle the Read Links button click
 async function readLinksButton_onclick() {
     setContainerText("statusContainer", 'Loading...');
+
+    if (!widgetHandler.selArtRef || widgetHandler.selArtRef.length === 0) {
+        alert('No text artifacts selected.');
+        return;
+    }
+
+    // counter for successful link creation and unsuccessful link creation
+    let totalLinks = 0;
+    let unsuccessfulLinks = 0;
+
+    for (let i = 0; i < widgetHandler.selArtRef.length; i++) {
+        RM.Data.getAttributes(widgetHandler.selArtRef[i], [RM.Data.Attributes.PRIMARY_TEXT, RM.Data.Attributes.FORMAT], async function (res) {
+            let primaryText = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/PrimaryText"];
+            let title = res.data[0].values["http://purl.org/dc/terms/title"];
+            let format = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"]; // http://www.ibm.com/xmlns/rdm/types/ArtifactFormat
+            console.log('Title:', title);
+            console.log('Primary Text:', primaryText);
+            console.log('Format:', format);
+            console.log(JSON.stringify(res));
+
+            // Process Item if it is a Text artifact else skip
+            if (format !== 'Text') { //http://www.ibm.com/xmlns/rdm/types/ArtifactFormats#Text
+                console.log('Artifact is not a Text artifact. Skipping...');
+                return; // Skip to the next artifact
+            } 
+
+            const startRef = widgetHandler.selArtRef[i];
+            console.log('Artifact is a Text artifact. Processing...');
+            // Create a URL pattern to match URLs in the text that can be Wrapped Artifacts
+            const urlPattern = /https?:\/\/[^\s"'>]+/g;
+            // Extract all URLs
+            const urls = primaryText.match(urlPattern);
+            // Get the current server's origin (protocol, hostname, and port)
+            const currentServer = window.location.origin;
+
+           
+            // Check if the urls is not empty
+            if (urls) {
+                // console.log('URLs found in the text.');
+                 // Filter URLs to only include those from the same server and containing 'rm/wrappedResources'
+                const filteredUrls = urls.filter(url => url.startsWith(currentServer) && url.toLowerCase().includes('rm/wrappedresources') );
+                console.log('Found Wrapped items: ',filteredUrls);
+                // Let's create Embeds links for the wrapped items
+                // Loop through the filtered URLs
+                for (let j = 0; j < filteredUrls.length; j++) {
+                    // Get the URI of the wrapped item
+                    const wrAtrifactUri = filteredUrls[j].split('?')[0]; //.split('?').pop(); const urlWithoutQuery = url.split('?')[0];
+                    const targetUri = wrAtrifactUri.replace('wrappedResources', 'resources');
+                    console.log('Wrapped Artifact URI:', targetUri);
+                    // Create a new ArtifactRef object
+                    const textArtifactRef = new RM.ArtifactRef(startRef.uri, startRef.componentUri, null, format);
+                    console.log('Text Artifact Ref:', JSON.stringify(textArtifactRef));
+                    const targetArtifactRef = new RM.ArtifactRef(targetUri, startRef.componentUri, null, 'WrapperResource');
+                    console.log('Wrapped Artifact Ref:', JSON.stringify(targetArtifactRef));
+                    // Create a Link between the Text Artifact and the Wrapped Artifact
+                    try {
+                        totalLinks++;
+                        await updateLinkContext(textArtifactRef, RM.Data.LinkTypes.EMBEDS, targetArtifactRef);
+                        setContainerText("statusContainer", `Created ${totalLinks} links.`);
+                    } catch (error) {
+                        unsuccessfulLinks++;
+                        console.error('Error updating link context:', error);
+                    }
+                }
+            
+            }
+        });
+    }
+    
+    // From this on this is not correct
     widgetHandler.availableLinks = [];
     if (!widgetHandler.selArtRef || widgetHandler.selArtRef.length === 0) {
         setContainerText("statusContainer", 'No text artifact selected.');
         return;
     }
-    await readLinks(widgetHandler.selArtRef);
-    setContainerText("statusContainer", 'Select Link types to convert.');
+    // await readLinks(widgetHandler.selArtRef);
+    // setContainerText("statusContainer", 'Select Link types to convert.');
     
-    if (widgetHandler.availableLinks.length !== 0) {
-        const formLength = displayLinkOptions(widgetHandler.availableLinks);
-        setContainerText("statusContainer", 'Select Link types to convert.');
-        toggleElementVisibility('convertButtonContainer', 'block');
-    } else {
-        setContainerText("statusContainer", 'No outgoing links found in selected items.');
-    }
+    // if (widgetHandler.availableLinks.length !== 0) {
+    //     const formLength = displayLinkOptions(widgetHandler.availableLinks);
+    //     setContainerText("statusContainer", 'Select Link types to convert.');
+    //     toggleElementVisibility('convertButtonContainer', 'block');
+    // } else {
+    //     setContainerText("statusContainer", 'No outgoing links found in selected items.');
+    // }
 }
 
 // Function to read links of selected artifacts
 async function readLinks(artifacts) {
     for (const artifact of artifacts) {
-        if (!artifact.moduleUri) {
-            console.error('Module URI not found for artifact:', artifact);
-            setContainerText("container", 'Module URI not found for selected artifact.');
-            continue;
-        }
+        // Get links of the artifact
         try {
             const links = await getLinks(artifact);
             widgetHandler.availableLinks.push(...links);
@@ -314,6 +380,7 @@ function getLinks(artifact) {
         RM.Data.getLinkedArtifacts(artifact, function(response) {
             if (response && response.code === RM.OperationResult.OPERATION_OK) {
                 // if response.data.artifactLinks.length is defined
+                console.log('Response:', JSON.stringify(response));
                 if (response.data.artifactLinks.length === 0) {
                     // console.log('No links found for artifact:');
                     resolve([]);
