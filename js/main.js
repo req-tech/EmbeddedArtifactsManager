@@ -69,17 +69,26 @@ async function getAllArtifactsFromProject() {
         const baseUrl = `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}/rm`;
 
         console.log('Project ID:', projectId, 'Base URL:', baseUrl);
+        console.log('componentUri:', widgetHandler.selArtRef[0].componentUri);
 
         // Construct the query URL
         const oslcQuery = "oslc.query=true";
         const projectURL = `projectURL=${encodeURIComponent(`${baseUrl}/process/project-areas/${projectId}`)}`;
+        const componentUri = encodeURIComponent(`
+            componentURI=https://clm.celeris.se/rm/rm-projects/${widgetHandler.selArtRef[0].componentUri}
+            /components/${widgetHandler.selArtRef[0].componentUri}
+            `);
+        const vvc = '&' + encodeURIComponent(`vvc.configuration=https://clm.celeris.se/rm/cm/stream/${widgetHandler.selArtRef[0].componentUri}`);
         const oslcPrefix = encodeURIComponent("oslc.prefix=dcterms=<http://purl.org/dc/terms/>,rm_nav=<http://jazz.net/ns/rm/navigation#>");
         const oslcWhere = encodeURIComponent('oslc.where=dcterms:modified>"2020-08-01T21:51:40.979Z"^^xsd:datetime');
         const oslcSelect = encodeURIComponent("oslc.select=dcterms:identifier,rm_nav:parent");
-        const oslcPaging = encodeURIComponent("oslc.paging=true");
-        const oslcPageSize = encodeURIComponent("oslc.pageSize=200");
+        // const oslcPaging = encodeURIComponent("oslc.paging=true");
+        // const oslcPageSize = encodeURIComponent("oslc.pageSize=200");
+        const oslcPaging = "oslc.paging=true";
+        const oslcPageSize = "oslc.pageSize=200";
 
-        let queryUrl = `${baseUrl}/views?${oslcQuery}&${projectURL}&${oslcPrefix}&${oslcWhere}&${oslcSelect}&${oslcPaging}&${oslcPageSize}`;
+        let queryUrl = `${baseUrl}/views?${oslcQuery}&${componentUri}${vvc}&${oslcPrefix}&${oslcWhere}&${oslcSelect}&${oslcPaging}&${oslcPageSize}`;
+        // let queryUrl = `${baseUrl}/views?${oslcQuery}&${projectURL}&${oslcPrefix}&${oslcWhere}&${oslcSelect}&${oslcPaging}&${oslcPageSize}`;
         console.log('Query URL:', queryUrl);
         // queryUrl = 'https://homie.byte.fi:9443/rm/views?oslc.query=true&projectURL=https%3A%2F%2Fhomie.byte.fi%3A9443%2Frm%2Fprocess%2Fproject-areas%2F_22yKMJFmEe-Oy5UELFqR4Q&oslc.prefix=dcterms%3D%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2F%3E%2Crm_nav%3D%3Chttp%3A%2F%2Fjazz.net%2Fns%2Frm%2Fnavigation%23%3E&oslc.where=dcterms%3Amodified%3E%222020-08-01T21%3A51%3A40.979Z%22%5E%5Exsd%3Adatetime&oslc.select=dcterms%3Aidentifier%2Crm_nav%3Aparent&oslc.paging=true&oslc.pageSize=200';
         console.log('Curl  URL:', queryUrl);
