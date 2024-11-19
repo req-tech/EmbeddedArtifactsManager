@@ -53,6 +53,7 @@ function toggleVisibility(divId, buttonId, showText, hideText) {
 // Function for Dev actions
 function devActions() {
     console.log('Dev actions');
+    console.log('Artifact:', JSON.stringify(widgetHandler.selArtRef[0]));
     const results = getAllArtifactsFromProject();
 }
 
