@@ -64,6 +64,7 @@ async function getAllArtifactsFromProject() {
     const projectId = projectUriParts[projectUriParts.length - 1];
     const compUri = '_NO35cEqNEe-lXMAnwStbdQ'; //widgetHandler.selArtRef[0].componentUri;
     const project = '_Mks7EEqNEe-lXMAnwStbdQ';
+    console.log('Artifact:', JSON.stringify(widgetHandler.selArtRef[0]));
 
     try {
         const browserURL = window.location.href;
@@ -81,7 +82,8 @@ async function getAllArtifactsFromProject() {
         const vvc = `&vvc.configuration=${encodeURIComponent(`https://clm.celeris.se/rm/cm/stream/${compUri}`)}`;
         //  const vvc = `&vvc.configuration=${encodeURIComponent(`https://clm.celeris.se/rm/cm/stream/${compUri}`)}`;
         const oslcPrefix = encodeURIComponent("oslc.prefix=dcterms=<http://purl.org/dc/terms/>,rm_nav=<http://jazz.net/ns/rm/navigation#>");
-        const oslcWhere = encodeURIComponent('oslc.where=dcterms:modified>"2020-08-01T21:51:40.979Z"^^xsd:datetime');
+        const oslcWhere = encodeURIComponent('oslc.where=dcterms:identifier>"228097"');
+        // const oslcWhere = encodeURIComponent('oslc.where=dcterms:modified>"2020-08-01T21:51:40.979Z"^^xsd:datetime');
         const oslcSelect = encodeURIComponent("oslc.select=dcterms:identifier,rm_nav:parent");
         // const oslcPaging = encodeURIComponent("oslc.paging=true");
         // const oslcPageSize = encodeURIComponent("oslc.pageSize=200");
