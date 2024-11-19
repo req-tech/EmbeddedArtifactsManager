@@ -68,9 +68,11 @@ async function getAllArtifactsFromProject() {
     console.log('Artifact:', JSON.stringify(widgetHandler.selArtRef[0]));
 
     try {
-        const browserURL = window.location.href;
-        console.log('Browser URL:', browserURL);
-        const urlParts = browserURL.split('&');
+        // Get the current browser top level URL 
+        const browserURLtop = window.top.href; // Get the current browser URL
+        const browserURL = window.location.href; // Get the current browser URL
+        console.log('Browser URL:', browserURLtop);
+        const urlParts = browserURLtop.split('&');
         let componentUriOslc = '';
         if (urlParts[0].includes('showProjectDashboard')) {
             componentUriOslc = urlParts[1];
