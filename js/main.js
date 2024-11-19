@@ -98,6 +98,7 @@ async function getAllArtifactsFromProject() {
             method: 'GET',
             headers: {
                 'Accept': 'application/rdf+xml',
+                'Accept': 'application/json',
                 'OSLC-Core-Version': '3.0' // Update to the version used in the curl command
             },
             credentials: 'include' // Ensures cookies are sent along with the request
