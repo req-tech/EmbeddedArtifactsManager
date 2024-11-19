@@ -69,7 +69,7 @@ async function getAllArtifactsFromProject() {
 
     try {
         // Get the current browser top level URL 
-        const browserURLtop = window.top.href; // Get the current browser URL
+        const browserURLtop = window.top.location.href;// Get the current browser URL
         const browserURL = window.location.href; // Get the current browser URL
         console.log('Browser URL:', browserURLtop);
         const urlParts = browserURLtop.split('&');
