@@ -63,6 +63,7 @@ async function getAllArtifactsFromProject() {
     const projectUriParts = projectUri.split('/');
     const projectId = projectUriParts[projectUriParts.length - 1];
     const compUri = '_NO35cEqNEe-lXMAnwStbdQ'; //widgetHandler.selArtRef[0].componentUri;
+    const project = '_Mks7EEqNEe-lXMAnwStbdQ';
 
     try {
         const browserURL = window.location.href;
@@ -75,7 +76,7 @@ async function getAllArtifactsFromProject() {
         // Construct the query URL
         const oslcQuery = "oslc.query=true";
         const projectURL = `projectURL=${encodeURIComponent(`${baseUrl}/process/project-areas/${projectId}`)}`;
-        const componentUriEncoded = `componentURI=${encodeURIComponent(`https://clm.celeris.se/rm/rm-projects/${compUri}/components/${compUri}`)}`;
+        const componentUriEncoded = `componentURI=${encodeURIComponent(`https://clm.celeris.se/rm/rm-projects/${project}/components/${compUri}`)}`;
         // const componentUriEncoded = `componentURI=${encodeURIComponent(`https://clm.celeris.se/rm/rm-projects/${compUri}/components/${compUri}`)};
         const vvc = `&vvc.configuration=${encodeURIComponent(`https://clm.celeris.se/rm/cm/stream/${compUri}`)}`;
         //  const vvc = `&vvc.configuration=${encodeURIComponent(`https://clm.celeris.se/rm/cm/stream/${compUri}`)}`;
@@ -97,7 +98,7 @@ async function getAllArtifactsFromProject() {
         const response = await fetch(queryUrl, {
             method: 'GET',
             headers: {
-                'Accept': 'application/rdf+xml',
+                // 'Accept': 'application/rdf+xml',
                 'Accept': 'application/json',
                 'OSLC-Core-Version': '3.0' // Update to the version used in the curl command
             },
