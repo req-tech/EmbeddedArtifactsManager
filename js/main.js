@@ -50,6 +50,77 @@ function toggleVisibility(divId, buttonId, showText, hideText) {
     adjustHeight();
 }
 
+// Function for Dev actions
+function devActions() {
+    console.log('Dev actions');
+    const results = getAllArtifactsFromProject();
+}
+
+
+// Function to get all artifacts from the entire project using OSLC
+async function getAllArtifactsFromProject() {
+    const projectUri = widgetHandler.selArtRef[0].componentUri;
+    const projectUriParts = projectUri.split('/');
+    const projectId = projectUriParts[projectUriParts.length - 1];
+
+    try {
+        const browserURL = window.location.href;
+        const url = new URL(browserURL);
+        const baseUrl = `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}/rm`;
+
+        console.log('Project ID:', projectId, 'Base URL:', baseUrl);
+
+        // Construct the query URL
+        const oslcQuery = "oslc.query=true";
+        const projectURL = `projectURL=${encodeURIComponent(`${baseUrl}/process/project-areas/${projectId}`)}`;
+        const oslcPrefix = encodeURIComponent("oslc.prefix=dcterms=<http://purl.org/dc/terms/>,rm_nav=<http://jazz.net/ns/rm/navigation#>");
+        const oslcWhere = encodeURIComponent('oslc.where=dcterms:modified>"2020-08-01T21:51:40.979Z"^^xsd:datetime');
+        const oslcSelect = encodeURIComponent("oslc.select=dcterms:identifier,rm_nav:parent");
+        const oslcPaging = encodeURIComponent("oslc.paging=true");
+        const oslcPageSize = encodeURIComponent("oslc.pageSize=200");
+
+        let queryUrl = `${baseUrl}/views?${oslcQuery}&${projectURL}&${oslcPrefix}&${oslcWhere}&${oslcSelect}&${oslcPaging}&${oslcPageSize}`;
+        console.log('Query URL:', queryUrl);
+        // queryUrl = 'https://homie.byte.fi:9443/rm/views?oslc.query=true&projectURL=https%3A%2F%2Fhomie.byte.fi%3A9443%2Frm%2Fprocess%2Fproject-areas%2F_22yKMJFmEe-Oy5UELFqR4Q&oslc.prefix=dcterms%3D%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2F%3E%2Crm_nav%3D%3Chttp%3A%2F%2Fjazz.net%2Fns%2Frm%2Fnavigation%23%3E&oslc.where=dcterms%3Amodified%3E%222020-08-01T21%3A51%3A40.979Z%22%5E%5Exsd%3Adatetime&oslc.select=dcterms%3Aidentifier%2Crm_nav%3Aparent&oslc.paging=true&oslc.pageSize=200';
+        console.log('Curl  URL:', queryUrl);
+
+        // Perform the GET request
+        const response = await fetch(queryUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/rdf+xml',
+                'OSLC-Core-Version': '3.0' // Update to the version used in the curl command
+            },
+            credentials: 'include' // Ensures cookies are sent along with the request
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Response Error:', errorText);
+            throw new Error(`Failed to fetch artifacts: ${response.status} ${response.statusText}`);
+        }
+
+        const responseData = await response.text();
+        console.log('Response Data:', responseData);
+
+        // Assuming you have a function to parse RDF/XML
+        const artifacts = parseArtifactsFromRDF(responseData);
+        return artifacts;
+    } catch (error) {
+        console.error('Error while fetching project artifacts:', error);
+        return [];
+    }
+}
+
+
+
+// Placeholder function for parsing artifacts from RDF/XML
+function parseArtifactsFromRDF(rdfData) {
+    // Implement the parsing logic here to extract artifact references from RDF/XML response
+    return [];
+}
+
+
 // Function to handle the Read Links button click
 async function readLinksButton_onclick() {
     setContainerText("statusContainer", 'Loading...');

@@ -92,39 +92,60 @@ function parseArtifactsFromRDF(rdfData) {
     return [];
 }
 
+// Function for Dev actions
+function devActions() {
+    console.log('Dev actions');
+    const results = getAllArtifactsFromProject();
+}
+
 
 // Function to get all artifacts from the entire project using OSLC
 async function getAllArtifactsFromProject() {
+    const projectUri = widgetHandler.selArtRef[0].componentUri;
+    const projectUriParts = projectUri.split('/');
+    const projectId = projectUriParts[projectUriParts.length - 1];
+
     try {
-        const baseUrl = "https://homie.byte.fi:9443/rm/views";
+        const browserURL = window.location.href;
+        const url = new URL(browserURL);
+        const baseUrl = `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}/rm`;
+
+        console.log('Project ID:', projectId, 'Base URL:', baseUrl);
+
+        // Construct the query URL
         const oslcQuery = "oslc.query=true";
-        const projectURL = "projectURL=https://homie.byte.fi:9443/rm/process/project-areas/_2vIqEJFmEe-Oy5UELFqR4Q";
-        const oslcPrefix = "oslc.prefix=dcterms=<http://purl.org/dc/terms/>,rm_nav=<http://jazz.net/ns/rm/navigation#>";
-        // const oslcWhere = "oslc.where=dcterms:modified>\"2020-08-01T21:51:40.979Z\"^^xsd:datetime"; //dcterms:creator=@""tanuj"""
-        const oslcWhere = "oslc.where=dcterms:creator=@Lasse"
-        const oslcSelect = "oslc.select=dcterms:identifier,rm_nav:parent";
-        const oslcPaging = "oslc.paging=true";
-        const oslcPageSize = "oslc.pageSize=200";
+        const projectURL = `projectURL=${encodeURIComponent(`${baseUrl}/process/project-areas/${projectId}`)}`;
+        const oslcPrefix = encodeURIComponent("oslc.prefix=dcterms=<http://purl.org/dc/terms/>,rm_nav=<http://jazz.net/ns/rm/navigation#>");
+        const oslcWhere = encodeURIComponent('oslc.where=dcterms:modified>"2020-08-01T21:51:40.979Z"^^xsd:datetime');
+        const oslcSelect = encodeURIComponent("oslc.select=dcterms:identifier,rm_nav:parent");
+        const oslcPaging = encodeURIComponent("oslc.paging=true");
+        const oslcPageSize = encodeURIComponent("oslc.pageSize=200");
 
-        const queryUrl = `${baseUrl}?${oslcQuery}&${projectURL}&${oslcPrefix}&${oslcWhere}&${oslcSelect}&${oslcPaging}&${oslcPageSize}`;
+        let queryUrl = `${baseUrl}/views?${oslcQuery}&${projectURL}&${oslcPrefix}&${oslcWhere}&${oslcSelect}&${oslcPaging}&${oslcPageSize}`;
+        console.log('Query URL:', queryUrl);
+        // queryUrl = 'https://homie.byte.fi:9443/rm/views?oslc.query=true&projectURL=https%3A%2F%2Fhomie.byte.fi%3A9443%2Frm%2Fprocess%2Fproject-areas%2F_22yKMJFmEe-Oy5UELFqR4Q&oslc.prefix=dcterms%3D%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2F%3E%2Crm_nav%3D%3Chttp%3A%2F%2Fjazz.net%2Fns%2Frm%2Fnavigation%23%3E&oslc.where=dcterms%3Amodified%3E%222020-08-01T21%3A51%3A40.979Z%22%5E%5Exsd%3Adatetime&oslc.select=dcterms%3Aidentifier%2Crm_nav%3Aparent&oslc.paging=true&oslc.pageSize=200';
+        console.log('Curl  URL:', queryUrl);
 
+        // Perform the GET request
         const response = await fetch(queryUrl, {
-            method: 'POST',
+            method: 'GET',
             headers: {
-                // 'OSLC-Core-Version' : '2.0',
-                'Accept': 'application/rdf+xml'
-                
+                'Accept': 'application/rdf+xml',
+                'OSLC-Core-Version': '3.0' // Update to the version used in the curl command
             },
-            credentials: 'include'
+            credentials: 'include' // Ensures cookies are sent along with the request
         });
 
         if (!response.ok) {
-            console.error('response:', response);
-            throw new Error('Failed to fetch artifacts from the project.');
+            const errorText = await response.text();
+            console.error('Response Error:', errorText);
+            throw new Error(`Failed to fetch artifacts: ${response.status} ${response.statusText}`);
         }
 
         const responseData = await response.text();
-        // Assuming a parser to convert RDF/XML to JSON or extract artifact references
+        console.log('Response Data:', responseData);
+
+        // Assuming you have a function to parse RDF/XML
         const artifacts = parseArtifactsFromRDF(responseData);
         return artifacts;
     } catch (error) {
@@ -132,6 +153,8 @@ async function getAllArtifactsFromProject() {
         return [];
     }
 }
+
+
 
 // Placeholder function for parsing artifacts from RDF/XML
 function parseArtifactsFromRDF(rdfData) {
@@ -141,9 +164,7 @@ function parseArtifactsFromRDF(rdfData) {
 
 // Function to handle the Read Links button click
 async function readLinksButton_onclick() {
-    setContainerText("statusContainer", 'Loading.._____.');
-    const arts =  getAllArtifactsFromProject('_2vIqEJFmEe-Oy5UELFqR4Q');
-    console.log('Amount of arts: ', arts.length);
+    setContainerText("statusContainer", 'Loading..____4.');
 
     if (!widgetHandler.selArtRef || widgetHandler.selArtRef.length === 0) {
         alert('No text artifacts selected.');
@@ -154,19 +175,6 @@ async function readLinksButton_onclick() {
     let totalLinks = 0;
     let unsuccessfulLinks = 0;
 
-    // try {
-    //     // Retrieve all artifacts from the entire project using OSLC
-    //     const projectArtifacts = await getAllArtifactsFromProject('_2vIqEJFmEe-Oy5UELFqR4Q');
-    //     if (!projectArtifacts || projectArtifacts.length === 0) {
-    //         alert('No artifacts found in the project.');
-    //         return;
-    //     }
-    // } catch (error) {
-    //     console.error('Error retrieving project artifacts:', error);
-    //     alert('Failed to retrieve artifacts from the project.');
-    // }
-
-
     // console.log('Amount of arts: ', projectArtifacts.length);
     console.log('Selected arts: ', widgetHandler.selArtRef[0]);
 
@@ -175,10 +183,10 @@ async function readLinksButton_onclick() {
             let primaryText = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/PrimaryText"];
             let title = res.data[0].values["http://purl.org/dc/terms/title"];
             let format = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"]; // http://www.ibm.com/xmlns/rdm/types/ArtifactFormat
-            console.log('Title:', title);
-            console.log('Primary Text:', primaryText);
-            console.log('Format:', format);
-            console.log(JSON.stringify(res));
+            // console.log('Title:', title);
+            // console.log('Primary Text:', primaryText);
+            // console.log('Format:', format);
+            // console.log(JSON.stringify(res));
 
             // Process Item if it is a Text artifact else skip
             if (format !== 'Text') { //http://www.ibm.com/xmlns/rdm/types/ArtifactFormats#Text
@@ -198,10 +206,7 @@ async function readLinksButton_onclick() {
             // Call ReadLinks and log the response
             const links = await getLinks(widgetHandler.selArtRef[i]);
             console.log('Links:', JSON.stringify(links));
-            // quit for loop
-            return;
 
-            
            
             // Check if the urls is not empty
             if (urls) {
