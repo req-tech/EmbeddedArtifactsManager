@@ -69,9 +69,9 @@ async function getAllArtifactsFromProject() {
 
     try {
         // Get the current browser top level URL 
-        const browserURLtop = window.top.location.href;// Get the current browser URL
+        const browserURLtop = window.parent.location.href;// Get the current browser URL
         const browserURL = window.location.href; // Get the current browser URL
-        console.log('Browser URL:', browserURLtop);
+        console.log('Browser parent URL:', browserURLtop);
         const urlParts = browserURLtop.split('&');
         let componentUriOslc = '';
         if (urlParts[0].includes('showProjectDashboard')) {
