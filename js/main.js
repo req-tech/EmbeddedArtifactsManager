@@ -25,6 +25,26 @@ function onBodyLoad() {
     adjustHeight();
 }
 
+// display the instructions on/off
+function show_instructions() {
+    // instructions is not visible toggle on, if visible toggle off
+    if (document.getElementById("instructions_div").style.display === "none") {
+        toggleElementVisibility('instructions_div', 'block');
+    } else {
+        toggleElementVisibility('instructions_div', 'none');
+    }
+}
+
+// display the instructions on/off
+function show_settings() {
+    // instructions is not visible toggle on, if visible toggle off
+    if (document.getElementById("settings_div").style.display === "none") {
+        toggleElementVisibility('settings_div', 'block');
+    } else {
+        toggleElementVisibility('settings_div', 'none');
+    }
+}
+
 // Function to show or hide HTML elements
 function toggleElementVisibility(elementId, displayStyle) {
     const element = document.getElementById(elementId);
@@ -50,7 +70,7 @@ function toggleVisibility(divId, buttonId, showText, hideText) {
     adjustHeight();
 }
 
-// Function for Dev actions
+// Function for Dev actions, not in use now
 async function devActions() {
     // console.log('Dev actions');
     // console.log('Artifact:', JSON.stringify(widgetHandler.selArtRef[0]));
@@ -90,7 +110,6 @@ async function devActions() {
         }
     }
 }
-
 
 // Function to get all artifacts from the entire project using OSLC
 async function getAllArtifactsFromProject() {
@@ -159,19 +178,13 @@ async function getAllArtifactsFromProject() {
         }
 
         const responseData = await response.text();
-        // console.log('Response Data:', responseData);
-        console.log('************************************     *************************************');
 
-        // Assuming you have a function to parse RDF/XML
-        // const artifacts = parseArtifactsFromRDF(responseData);
         return responseData;
     } catch (error) {
         console.error('Error while fetching project artifacts:', error);
         return [];
     }
 }
-
-
 
 // Placeholder function for parsing artifacts from RDF/XML
 function parseArtifactsFromRDF(rdfData) {
@@ -191,55 +204,53 @@ function createArtifactRef(uri, componentUri, moduleUri, format) {
 }
 
 async function getModule() {
-    RM.Client.getCurrentArtifact(async function(res) {
-        if (res.code !== RM.OperationResult.OPERATION_OK) {
-            console.log('Error:', res);
-            return;
-        }
-        const jsonObject = res;
-
-        // Extract the format information
-        const format = jsonObject.data?.ref?.format;
-        const artifactFormat = jsonObject.data?.values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
-        
-        // Check if it is of type "Module"
-        if (format && format.endsWith("#Module") && artifactFormat === "Module") {
-            console.log("This is a type of Module.");
-        } else {
-            alert("You are not in a Module View.");
-            return;
-        }
-        const moduleUri = jsonObject.data?.ref?.uri;
-        const moduleBinding = await getModuleBinding(moduleUri);
-        const childBindings = moduleBinding[0]?.childBindings;
-        const componentUri = jsonObject.data?.ref?.componentUri;
+    const browserURLtop = window.parent.location.href;// Get the current browser URL
+    if ( browserURLtop.includes('showArtifactPage' )) {
+        RM.Client.getCurrentArtifact(async function(res) {
+            if (res.code !== RM.OperationResult.OPERATION_OK) {
+                console.log('Error:', res);
+                return;
+            }
+            const jsonObject = res;
+            console.log('Response:', JSON.stringify(jsonObject));
             
-        // console.log('Module Binding:', JSON.stringify(childBindings));
-        // Loop through the list using a for...of loop
-        let artifactRef = [];
-        for (const uri of childBindings) {
-            // console.log('URI:', uri);
-            // Create an ArtifactRef object
-            const textArtifactRef = await createArtifactRef(uri, componentUri, moduleUri, 'Text');
-            // const textArtifactRef = await new RM.ArtifactRef(uri, componentUri, moduleUri, 'Text');
-            artifactRef.push(textArtifactRef);
-            // const ress = await getArtifactWithEmbed(textArtifactRef);
-            // if (ress) {
-            //     // console.log('Embedded items:', JSON.stringify(ress.ref));
-            //     // console.log('Artifact Ref:', JSON.stringify(textArtifactRef));
-            //     // alert('Embedded items found in the Primary text.');
-            //     artifactRef.push(textArtifactRef);
-            // }
-            // setContainerText("statusContainer", `Now ${artifactRef.length} artifacts.`);
-        }
-        // console.log('Artifact Ref:', JSON.stringify(artifactRef));
-        // Loop through the list using a for...in loop  
-        // for (const artifactWithEmbed of artifactRef) {
-        //     console.log('Create links for Artifact:', artifactWithEmbed);
-        //     // Pass artifactRef to readLinksButton_onclick
-        await readLinksButton_onclick(artifactRef, moduleBinding);
-        // }
-    });
+
+            // Extract the format information
+            const format = jsonObject.data?.ref?.format;
+            const artifactFormat = jsonObject.data?.values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
+            
+            // Check if it is of type "Module"
+            if (format && format.endsWith("#Module") && artifactFormat === "Module" && browserURLtop.includes('showArtifactPage')) {
+                console.log("This is a type of Module.");
+            } else {
+                alert("You are not in a Module View.");
+                return;
+            }
+            console.log('Module URI:', jsonObject.data?.ref?.uri);
+            const moduleUri = jsonObject.data?.ref?.uri;
+            const moduleBinding = await getModuleBinding(moduleUri);
+            console.log('Module Binding:', JSON.stringify(moduleBinding));
+            // const childBindings = moduleBinding[0]?.childBindings;
+            const componentUri = jsonObject.data?.ref?.componentUri;          
+            // console.log('Module Binding:', JSON.stringify(childBindings));
+            // Loop through the list using a for...of loop
+            let artifactRef = [];
+            for (const artifact of moduleBinding) {
+                // console.log('URI:', uri);
+                // if artifact.uri isHeading value is not true and artifact's isStructureRoot is not true
+                if (!artifact.isHeading && !artifact.isStructureRoot) {
+                    // Create an ArtifactRef object sub function to enable await
+                    const textArtifactRef = await createArtifactRef(artifact.uri, componentUri, moduleUri, 'Text');
+                    artifactRef.push(textArtifactRef);
+                    console.log('Text Artifact Uri:', JSON.stringify(textArtifactRef.uri));
+                }
+            }
+            await readLinksButton_onclick(artifactRef, moduleBinding);
+            toggleElementVisibility('reloadButton', 'block');
+        });
+    } else {
+        alert('You are not in a Module View.');
+    }
 }
 
 async function getArtifactWithEmbed(textArtifactRef) {
@@ -251,23 +262,16 @@ async function getArtifactWithEmbed(textArtifactRef) {
                 resolve(null); // Skip to the next artifact
                 return;
             }
-
             // Add text artifact reference to the list
-            // console.log('Text Artifact:', JSON.stringify(ress));
             let primaryText = ress.data[0].values["http://www.ibm.com/xmlns/rdm/types/PrimaryText"];
             let title = ress.data[0].values["http://purl.org/dc/terms/title"];
             let format = ress.data[0].values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
-            // console.log('Title:', title);
-            // console.log('Primary Text:', primaryText);
-            // console.log('Format:', format);
-
             // Process Item if it is a Text artifact else skip
             if (format !== 'Text') {
                 console.log('Artifact is not a Text artifact. Skipping...');
                 resolve(null); // Skip to the next artifact
                 return;
             } 
-
             // console.log('Artifact is a Text artifact. Processing...');
             // Create a URL pattern to match URLs in the text that can be Wrapped Artifacts
             const urlPattern = /https?:\/\/[^\s"'>]+/g;
@@ -290,7 +294,6 @@ async function processArtifact(startRefUri, primaryText, componentUri, format, c
     return new Promise(async (resolve, reject) => {
         try {
             let totalEmbeds = 0;
-            // console.log('Artifact is a Text artifact. Processing...');
             // Create a URL pattern to match URLs in the text that can be Wrapped Artifacts
             const urlPattern = /https?:\/\/[^\s"'>]+/g;
             // Extract all URLs
@@ -300,15 +303,13 @@ async function processArtifact(startRefUri, primaryText, componentUri, format, c
                 // Filter URLs to only include those from the same server and containing 'rm/wrappedResources'
                 const filteredUrls = urls.filter(url => url.startsWith(currentServer) && url.toLowerCase().includes('rm/wrappedresources'));
                 console.log('Found Wrapped items: ', filteredUrls.length);
-                // Let's create Embeds links for the wrapped items
                 // Loop through the filtered URLs
                 for (let j = 0; j < filteredUrls.length; j++) {
                     // Get the URI of the wrapped item
                     const wrArtifactUri = filteredUrls[j].split('?')[0];
                     const targetUri = wrArtifactUri.replace('wrappedResources', 'resources');
                     // console.log('Wrapped Artifact URI:', targetUri);
-                    // Create a new ArtifactRef object
-                    
+                    // Create a new ArtifactRef object    
                     const textArtifactRef = new RM.ArtifactRef(startRefUri, componentUri, null, format);
                     console.log('Text Artifact Ref:', JSON.stringify(textArtifactRef));
                     const targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, 'WrapperResource');
@@ -330,6 +331,7 @@ async function processArtifact(startRefUri, primaryText, componentUri, format, c
     });
 }
 
+// Function to read links of selected artifacts with await
 async function readArtifact(artifactRef) {
     return new Promise((resolve, reject) => {
         RM.Data.getAttributes(artifactRef, [RM.Data.Attributes.PRIMARY_TEXT, RM.Data.Attributes.FORMAT], function(res) {
@@ -351,21 +353,68 @@ async function readArtifact(artifactRef) {
         });
     });
 }
+
+// Async function to go through all selected items if they are Modules
+// Get all the artifacts and moduleBinding from the module and call readLinksButton_onclick one by one
+async function readAllModulesButtonOnClick() {
+    let totalModules = 0;
+    let counts = { totalLinks: 0, totalArtifacts: 0, unsuccessfulLinks: 0 };
+    setContainerText("statusContainer", 'Loading...');
+    widgetHandler.availableLinks = [];
+    for (let i = 0; i < widgetHandler.selArtRef.length; i++) {
+        const moduleUri = widgetHandler.selArtRef[i].uri;
+        // const moduleBinding = await getModuleBinding(moduleUri);
+        // // const childBindings = moduleBinding[0]?.childBindings;
+        const componentUri = widgetHandler.selArtRef[i].componentUri;
+        // // console.log('Module Binding:', JSON.stringify(childBindings));
+        // // Loop through the list using a for...of loop
+        // let artifactRef = [];
+        // const moduleUri = jsonObject.data?.ref?.uri;
+        const moduleBinding = await getModuleBinding(moduleUri);
+        // console.log('Module Binding:', JSON.stringify(moduleBinding));
+        // const childBindings = moduleBinding[0]?.childBindings;
+        // const componentUri = jsonObject.data?.ref?.componentUri;          
+        // console.log('Module Binding:', JSON.stringify(childBindings));
+        // Loop through the list using a for...of loop
+        let artifactRef = [];
+        for (const artifact of moduleBinding) {
+            // console.log('URI:', uri);
+            // if artifact.uri isHeading value is not true and artifact's isStructureRoot is not true
+            if (!artifact.isHeading && !artifact.isStructureRoot) {
+                // Create an ArtifactRef object sub function to enable await
+                const textArtifactRef = await createArtifactRef(artifact.uri, componentUri, moduleUri, 'Text');
+                artifactRef.push(textArtifactRef);
+                console.log('Text Artifact Uri:', JSON.stringify(textArtifactRef.uri));
+            }
+        }
+        // for (const uri of childBindings) {
+        //     // Create an ArtifactRef object sub function to enable await
+        //     const textArtifactRef = await createArtifactRef(uri, componentUri, moduleUri, 'Text');
+        //     artifactRef.push(textArtifactRef);
+        // }
+        const resultCounts = await readLinksButton_onclick(artifactRef, moduleBinding);
+        counts.totalLinks += resultCounts.totalLinks;
+        counts.totalArtifacts += resultCounts.totalArtifacts;
+        counts.unsuccessfulLinks += resultCounts.unsuccessfulLinks;
+        totalModules++;
+    }
+    setContainerText("statusContainer", `Searched links for ${totalModules} modules. <br> Created ${counts.totalLinks} new links for ${counts.totalArtifacts} Text artifacts scanned.`);
+    toggleElementVisibility('reloadButton', 'block');
+}
+
+
 // Calling function
 async function readLinksButton_onclick(artifactRef , moduleBinding) {
     setContainerText("statusContainer", 'Loading...');
-    if (artifactRef.length === 0) {
+    if (artifactRef.length === 0) { // When clicking the button get [] as artifactRef
         console.log('Processing selected artifacts.');
         artifactRef = widgetHandler.selArtRef;
     }
 
-    if (!artifactRef || artifactRef.length === 0) {
+    if (!artifactRef || artifactRef.length === 0) { // If it is still empty no selection made on module is empty
         alert('No text artifacts selected.');
         return;
     }
-    // Read module binding if not provided
-
-    // console.log('Processing artifacts:', artifactRef.length);
     // counter for successful link creation and unsuccessful link creation
     let totalLinks = 0;
     let totalArtifacts = 0;
@@ -388,16 +437,15 @@ async function readLinksButton_onclick(artifactRef , moduleBinding) {
                 continue; // Skip to the next artifact
             }
 
-            const startRef = artifactRef[i];
+            const startRef = artifactRef[i]; // This is processed only when selected Artifact contains correct data.
             let startUri = startRef.uri;
             // if module binding then get the bound artifact URI
             if (moduleBinding) { // This is the case when the selected Artifact is not Base artifact.
                 startUri = getBoundArtifactUri(startRef.uri, moduleBinding);
             }   
-            
+            totalArtifacts++;
             const embedsProcessed = await processArtifact(startUri, primaryText, startRef.componentUri, "Text", currentServer);
             totalLinks += embedsProcessed;
-            totalArtifacts++;
             setContainerText("statusContainer", `Created ${totalLinks} links for ${totalArtifacts} artifacts scanned.`);
         } catch (error) {
             console.error('Error fetching attributes:', error);
@@ -407,8 +455,9 @@ async function readLinksButton_onclick(artifactRef , moduleBinding) {
 
     if (totalLinks === 0) {
         setContainerText("statusContainer", 'No embedded Artifacts without Embeds Link found.');
-        return;
     }
+    toggleElementVisibility('reloadButton', 'block');
+    return {totalLinks, totalArtifacts, unsuccessfulLinks};
 }
 
 // Function to read links of selected artifacts
@@ -424,150 +473,6 @@ async function readLinks(artifacts) {
         }
     }
     displayLinkOptions(widgetHandler.availableLinks);  
-}
-
-// Function to display link options as checkboxes
-function displayLinkOptions(links) {
-    const linkContainer = document.getElementById("linkContainer");
-    const form = document.createElement("form");
-    form.id = "linkOptionsForm";
-
-    const linkTypeCount = {};
-    links.forEach((link) => {
-        if (link.art.moduleUri != null && link.linktype.direction !== '_OBJ') {
-            // console.log('Link:', JSON.stringify(link));
-            let linkTypeString = typeof link.linktype === 'object' ? link.linktype.uri.split('/').pop() : link.linktype;
-            linkTypeString = linkTypeString === 'Link' ? 'Link To' : linkTypeString;
-
-            if (!linkTypeCount[linkTypeString]) {
-                linkTypeCount[linkTypeString] = [];
-            }
-            linkTypeCount[linkTypeString].push(link);
-        }
-    });
-
-    // console.log('Link type count:', JSON.stringify(linkTypeCount));
-
-    Object.entries(linkTypeCount).forEach(([linkType, linkGroup], index) => {
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.id = `link_${index}`;
-        checkbox.name = "link";
-        checkbox.value = linkGroup.map((_, i) => i).join(","); // Store all indices of the links of the same type
-        checkbox.classList.add("link-checkbox");
-        checkbox.addEventListener("click", (e) => {
-            e.stopPropagation();
-            updateSelectAllCheckboxState();
-        });
-
-        const label = document.createElement("label");
-        label.htmlFor = `link_${index}`;
-        label.innerHTML = ` ${linkType} (${linkGroup.length})`;
-        label.style.fontSize = "12px";
-
-        const lineBreak = document.createElement("br");
-
-        form.appendChild(checkbox);
-        form.appendChild(label);
-        form.appendChild(lineBreak);
-    });
-
-    if (Object.keys(linkTypeCount).length > 1) {
-        const selectAllCheckbox = document.createElement("input");
-        selectAllCheckbox.type = "checkbox";
-        selectAllCheckbox.id = "selectAllLinksCheckbox";
-        selectAllCheckbox.onclick = toggleSelectAllLinks;
-    
-        const selectAllLabel = document.createElement("label");
-        selectAllLabel.htmlFor = "selectAllLinksCheckbox";
-        selectAllLabel.innerHTML = " Select All Links";
-        selectAllLabel.style.fontSize = "12px";
-    
-        const selectAllLineBreak = document.createElement("br");
-    
-        form.appendChild(selectAllCheckbox);
-        form.appendChild(selectAllLabel);
-        form.appendChild(selectAllLineBreak);
-    }
-
-    if (form.children.length === 0) {
-        widgetHandler.availableLinks = [];
-    }
-
-    linkContainer.innerHTML = "";
-    linkContainer.appendChild(form);
-
-    adjustHeight();
-    return form.length; 
-}
-
-// Function to handle the Convert Links button click
-async function convertLinksButtonOnClick(removeModuleLinks) {
-    console.log('Convert button clicked:', removeModuleLinks);
-    const selectedLinks = getSelectedLinks();
-    if (selectedLinks.length === 0) {
-        setContainerText("container", 'No links selected for conversion.');
-        return;
-    }
-    console.log('Selected links:', JSON.stringify(selectedLinks));
-
-    let successfulConversions = 0;
-
-    for (const selectedGroup of selectedLinks) {
-        const linkIndices = selectedGroup.split(",").map(Number);
-        for (const linkIndex of linkIndices) {
-            const link = widgetHandler.availableLinks[linkIndex];
-            const { art: { uri: existingStartUri, moduleUri }, targets, linktype } = link;
-            console.log('Converting link:', JSON.stringify(link));
-
-            const existingTargetUri = targets[0]?.uri;
-            const targetModuleUri = targets[0]?.moduleUri;
-            const { componentUri, format } = widgetHandler.selArtRef[0];
-
-            if (existingTargetUri === existingStartUri) {
-                console.error('Link target is same as source. Skipping link:', JSON.stringify(link));
-                continue;
-            }
-
-            if (!existingTargetUri) {
-                console.error('No target URI found for link:', JSON.stringify(link));
-                continue;
-            }
-
-            try {
-                const startBoundArtifactData = await getModuleBinding(moduleUri);
-                const baseStartUri = getBoundArtifactUri(existingStartUri, startBoundArtifactData);
-                const targetBoundArtifactData = await getModuleBinding(targetModuleUri);
-                const baseTargetUri = getBoundArtifactUri(existingTargetUri, targetBoundArtifactData);
-                const baseStartRef = new RM.ArtifactRef(baseStartUri, componentUri, null, format);
-                const baseTargetRef = new RM.ArtifactRef(baseTargetUri, componentUri, null, format);
-                await updateLinkContext(baseStartRef, linktype, baseTargetRef);
-            } catch (error) {
-                console.error('Error creating base links or fetching module binding for link target:', error);
-                continue;
-            }
-            
-            if (removeModuleLinks) {
-                try {
-                    const startRef = new RM.ArtifactRef(existingStartUri, componentUri, moduleUri, format);
-                    const targetRef = new RM.ArtifactRef(existingTargetUri, componentUri, targetModuleUri, format);
-                    await deleteModuleLinks(startRef, linktype, targetRef);
-                } catch (error) {
-                    console.error('Error deleting module links:', error);
-                }
-            }
-
-            successfulConversions++;
-        }
-    }
-
-    const statusMessage = `Converted ${successfulConversions} links out of ${selectedLinks.length} link types successfully.`;
-    setContainerText("statusContainer", statusMessage);
-    // Todo: Add a message to check if base links already existed
-    // setContainerText("statusContainer", successfulConversions !== selectedLinks.length ? `${statusMessage} <br> Check if Base links already existed.` : statusMessage);
-    
-    toggleElementVisibility('reloadButton', 'block');
-    toggleElementVisibility('convertButtonContainer', 'none');
 }
 
 // Function to update link context
@@ -600,12 +505,6 @@ async function deleteModuleLinks(start, linkType, target) {
     });
 }
 
-// Function to get selected links
-function getSelectedLinks() {
-    const checkboxes = Array.from(document.querySelectorAll('#linkOptionsForm input[name="link"]:checked'));
-    return checkboxes.map(checkbox => checkbox.value);
-}
-
 // Function to set container text
 function setContainerText(containerId, string) {
     const container = document.getElementById(containerId);
@@ -627,6 +526,8 @@ function getModuleBinding(moduleUri) {
             });
 
             if (!response.ok) {
+                alert('Item that you are trying to access is not a module.');
+                setContainerText("statusContainer", 'Item that you are trying to access is not a module.');
                 reject(new Error('Failed to fetch module binding. Response status: ' + response.status));
             } else {
                 const data = await response.json();
@@ -645,7 +546,7 @@ function getBoundArtifactUri(artifactUri, moduleBindings) {
     if (binding && binding.boundArtifact) {
         return binding.boundArtifact;
     } else {
-        throw new Error('No bound artifact found for the given artifact URI.');
+        return artifactUri;
     }
 }
 
@@ -682,71 +583,57 @@ function getLinks(artifact) {
     });
 }
 
-// Function to toggle the Select All Links checkbox
-function toggleSelectAllLinks() {
-    const selectAll = document.getElementById("selectAllLinksCheckbox").checked;
-    document.querySelectorAll('input[name="link"]').forEach(checkbox => {
-        checkbox.checked = selectAll;
-    });
-}
-
-// Function to update the Select All checkbox state
-function updateSelectAllCheckboxState() {
-    const allChecked = Array.from(document.querySelectorAll('input[name="link"]')).every(checkbox => checkbox.checked);
-    document.getElementById("selectAllLinksCheckbox").checked = allChecked;
-}
-
 // Function to handle Read All Links button click
-async function readAllLinksButtonOnClick() {
-    setContainerText("statusContainer", 'Loading...');
-    widgetHandler.availableLinks = [];
-    try {
-        const response = await new Promise((resolve, reject) => {
-            RM.Client.getCurrentArtifact(function(response) {
-                if (response.code === RM.OperationResult.OPERATION_OK) {
-                    resolve(response);
-                } else {
-                    reject('Error retrieving current artifact.');
-                }
-            });
-        });
+// async function readAllLinksButtonOnClick() {
+//     setContainerText("statusContainer", 'Loading...');
+//     widgetHandler.availableLinks = [];
+//     try {
+//         const response = await new Promise((resolve, reject) => {
+//             RM.Client.getCurrentArtifact(function(response) {
+//                 if (response.code === RM.OperationResult.OPERATION_OK) {
+//                     resolve(response);
+//                 } else {
+//                     reject('Error retrieving current artifact.');
+//                 }
+//             });
+//         });
 
-        if (response.data.values[RM.Data.Attributes.FORMAT] === "Module") {
-            const res = await new Promise((resolve, reject) => {
-                RM.Data.getContentsAttributes(response.data.ref, [RM.Data.Attributes.PRIMARY_TEXT, 'http://purl.org/dc/terms/identifier'], function(res) {
-                    if (res.code === RM.OperationResult.OPERATION_OK) {
-                        resolve(res);
-                    } else {
-                        reject('Error reading module contents.');
-                    }
-                });
-            });
+//         if (response.data.values[RM.Data.Attributes.FORMAT] === "Module") {
+//             const res = await new Promise((resolve, reject) => {
+//                 RM.Data.getContentsAttributes(response.data.ref, [RM.Data.Attributes.PRIMARY_TEXT, 'http://purl.org/dc/terms/identifier'], function(res) {
+//                     if (res.code === RM.OperationResult.OPERATION_OK) {
+//                         resolve(res);
+//                     } else {
+//                         reject('Error reading module contents.');
+//                     }
+//                 });
+//             });
        
-            widgetHandler.selArtRef = [res.data[0]];
-            for (const artifact of res.data) {
-                // console.log('Artifact:', JSON.stringify(artifact));
-                try {
-                    const links = await getLinks(artifact.ref);
-                    widgetHandler.availableLinks.push(...links);
-                } catch (error) {
-                    console.error('Error fetching links:', error);
-                }
-            }
+//             widgetHandler.selArtRef = [res.data[0]];
+//             for (const artifact of res.data) {
+//                 // console.log('Artifact:', JSON.stringify(artifact));
+//                 try {
+//                     const links = await getLinks(artifact.ref);
+//                     widgetHandler.availableLinks.push(...links);
+//                 } catch (error) {
+//                     console.error('Error fetching links:', error);
+//                 }
+//             }
             
-            // if (widgetHandler.availableLinks.length !== 0) {
-                const formLength = displayLinkOptions(widgetHandler.availableLinks);
-            if (formLength !== 0) {
-                setContainerText("statusContainer", 'Select Link types to convert.');
-                toggleElementVisibility('convertButtonContainer', 'block');
-            } else {
-                setContainerText("statusContainer", 'No outgoing Module links found in the module.');
-                toggleElementVisibility('convertButtonContainer', 'none');
-            }
+//             // if (widgetHandler.availableLinks.length !== 0) {
+//                 const formLength = displayLinkOptions(widgetHandler.availableLinks);
+//             if (formLength !== 0) {
+//                 setContainerText("statusContainer", 'Select Link types to convert.');
+//                 toggleElementVisibility('convertButtonContainer', 'block');
+//             } else {
+//                 setContainerText("statusContainer", 'No outgoing Module links found in the module.');
+//                 toggleElementVisibility('convertButtonContainer', 'none');
+//             }
 
-        } else {
-            alert('You are not in a Module.');
-        }
-    } catch (error) {
-        alert(error);
-    }
-}
+//         } else {
+//             alert('You are not in a Module.');
+//         }
+//     } catch (error) {
+//         alert(error);
+//     }
+// }

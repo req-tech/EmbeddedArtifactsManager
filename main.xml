@@ -65,24 +65,26 @@
 					<hr style='padding: 0 !important; margin: 0 !important;'/>
 
 					<div style="font-size:12px; display: none;" id='instructions_div'>
-						<b><span id='str003'></span> </b> <span id='str004'></span> <br/>
+						<b><span id='str003'></span> </b> <span id='str004b'>This widget creates Embeds type links for Text artifacts that contain embedded images and other objects.</span> <br/>
 						<ol>
-							<li> <span id='str005'></span> </li>
-							<li> <span id='str006'></span> </li>
-							<li> <span id='str007'></span></li>
+							<li> <span id='str005a'>Open the module or select Artifacts from list view.</span> </li>
+							<li> <span id='str006b'>Select operation. <li> - Whole Module button scans the whole module and creates Base Link links for all Embedded artifacts.</li><li> - Selected Modules process all Selected modules (can be long process). </li><li> Selected Items button works in all list views.</li></span> </li>
+							<li> <span id='str007a'>Click Reload to see newly created Base Links.</span></li>
 						</ol>
 
 						<hr style='padding: 0 !important; margin: 0 !important;'/>
 					</div>
 					
 					<div style="font-size:12px; display: none;" id='settings_div'>
-
+					 This Widget has no settings.
 					</div>
 				<div style="font-size:12px;" id="buttonContainer">
-				Create links for Embedded Artifacts:
-				<button style="font-size:12px; display: block;" id="readAllLinksButton" onclick="devActions()">Dev Action</button>
-				<button style="font-size:12px; display: block;" id="getModule" onclick="getModule()">Get Module Links</button>
-				<button style="font-size:12px; background-color:0d63fd; border: 0d63fd; color:white;" id="readLinksButton" onclick="readLinksButton_onclick([],[])">Selected Items only</button>
+				Create links for Embedded Artifacts: <br> 
+				
+				<button style="font-size:12px; background-color:0d63fd; border: 0d63fd; color:white;"" id="getModule" onclick="getModule()">Whole Module</button>
+				<button style="font-size:12px;" id="readAllModulesButtonOnClick" onclick="readAllModulesButtonOnClick([],[])">Selected Modules</button>
+				<button style="font-size:12px;" id="readLinksButton" onclick="readLinksButton_onclick([],[])">Selected Items</button>
+				
 				<br>
 				</div>
 	

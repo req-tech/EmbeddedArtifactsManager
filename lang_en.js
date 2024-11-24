@@ -13,20 +13,20 @@ lang_json = `{
       "text": "How to use this widget?"
     },
     {
-      "id": "str004",
-      "text": "This widget is designed to be a template for new Celeris widgets. It contains most of the basic code you might need to develop a widget. Follow the instructions below to use this widget with ease and confidence."
+      "id": "str004b",
+      "text": "This widget creates Embeds type links for Text artifacts that contain embedded images and other objects."
     },
     {
-      "id": "str005",
-      "text": "Open the module."
+      "id": "str005a",
+      "text": "Open the module or select Artifacts from list view."
     },
     {
-      "id": "str006",
-      "text": "Select the text artifacts."
+      "id": "str006b",
+      "text": "Select operation. <li> - Whole Module button scans the whole module and creates Base Link links for all Embedded artifacts.</li><li> - Or Selected Modules process all Selected modules (can be long process). </li><li> - Or Selected Items button works in all list views.</li>"
     },
     {
-      "id": "str007",
-      "text": "Click the button to print the title of the selected text artifacts."
+      "id": "str007a",
+      "text": "Click Reload to see newly created Base Links."
     },
     {
       "id": "str008",
@@ -45,13 +45,12 @@ lang_json = `{
       "text": "Print Text Artifacts Titles"
     }
   ],
-  "codeStrings":
-      {
-          "cs001": "Hide instructions",
-          "cs002": "Show instructions",
-          "cs003": "Hide settings",
-          "cs004": "Change settings"
-      }
+  "codeStrings": {
+    "cs001": "Hide instructions",
+    "cs002": "Show instructions",
+    "cs003": "Hide settings",
+    "cs004": "Change settings"
+  }
 }`;
 
 lang = JSON.parse(lang_json);
