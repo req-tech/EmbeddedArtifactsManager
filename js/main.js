@@ -237,7 +237,7 @@ async function getModule() {
         // for (const artifactWithEmbed of artifactRef) {
         //     console.log('Create links for Artifact:', artifactWithEmbed);
         //     // Pass artifactRef to readLinksButton_onclick
-        await readLinksButton_onclick(artifactRef);
+        await readLinksButton_onclick(artifactRef, moduleBinding);
         // }
     });
 }
@@ -286,7 +286,7 @@ async function getArtifactWithEmbed(textArtifactRef) {
 
 
 // Function to handle the Read Links button click, artifactRef is a list of artifact references
-async function processArtifact(startRef, primaryText, format, currentServer) {
+async function processArtifact(startRefUri, primaryText, componentUri, format, currentServer) {
     return new Promise(async (resolve, reject) => {
         try {
             let totalEmbeds = 0;
@@ -308,10 +308,11 @@ async function processArtifact(startRef, primaryText, format, currentServer) {
                     const targetUri = wrArtifactUri.replace('wrappedResources', 'resources');
                     // console.log('Wrapped Artifact URI:', targetUri);
                     // Create a new ArtifactRef object
-                    const textArtifactRef = new RM.ArtifactRef(startRef.uri, startRef.componentUri, null, format);
-                    // console.log('Text Artifact Ref:', JSON.stringify(textArtifactRef));
-                    const targetArtifactRef = new RM.ArtifactRef(targetUri, startRef.componentUri, null, 'WrapperResource');
-                    // console.log('Wrapped Artifact Ref:', JSON.stringify(targetArtifactRef));
+                    
+                    const textArtifactRef = new RM.ArtifactRef(startRefUri, componentUri, null, format);
+                    console.log('Text Artifact Ref:', JSON.stringify(textArtifactRef));
+                    const targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, 'WrapperResource');
+                    console.log('Wrapped Artifact Ref:', JSON.stringify(targetArtifactRef));
                     // Create a Link between the Text Artifact and the Wrapped Artifact
                     try {
                         await updateLinkContext(textArtifactRef, RM.Data.LinkTypes.EMBEDS, targetArtifactRef);
@@ -351,7 +352,7 @@ async function readArtifact(artifactRef) {
     });
 }
 // Calling function
-async function readLinksButton_onclick(artifactRef) {
+async function readLinksButton_onclick(artifactRef , moduleBinding) {
     setContainerText("statusContainer", 'Loading...');
     if (artifactRef.length === 0) {
         console.log('Processing selected artifacts.');
@@ -362,6 +363,8 @@ async function readLinksButton_onclick(artifactRef) {
         alert('No text artifacts selected.');
         return;
     }
+    // Read module binding if not provided
+
     // console.log('Processing artifacts:', artifactRef.length);
     // counter for successful link creation and unsuccessful link creation
     let totalLinks = 0;
@@ -373,6 +376,10 @@ async function readLinksButton_onclick(artifactRef) {
     for (let i = 0; i < artifactRef.length; i++) {
         // console.log('Processing Artifact:', JSON.stringify(artifactRef[i]));
         try {
+            if (moduleBinding.length === 0 && artifactRef[i].moduleUri) {
+                const moduleUri = artifactRef[i].moduleUri;
+                moduleBinding = await getModuleBinding(moduleUri);
+            }
             // const artifactsWithEmbeds = [];
             const primaryText = await readArtifact(artifactRef[i]);
 
@@ -382,7 +389,13 @@ async function readLinksButton_onclick(artifactRef) {
             }
 
             const startRef = artifactRef[i];
-            const embedsProcessed = await processArtifact(startRef, primaryText, "Text", currentServer);
+            let startUri = startRef.uri;
+            // if module binding then get the bound artifact URI
+            if (moduleBinding) { // This is the case when the selected Artifact is not Base artifact.
+                startUri = getBoundArtifactUri(startRef.uri, moduleBinding);
+            }   
+            
+            const embedsProcessed = await processArtifact(startUri, primaryText, startRef.componentUri, "Text", currentServer);
             totalLinks += embedsProcessed;
             totalArtifacts++;
             setContainerText("statusContainer", `Created ${totalLinks} links for ${totalArtifacts} artifacts scanned.`);

@@ -82,7 +82,7 @@
 				Create links for Embedded Artifacts:
 				<button style="font-size:12px; display: block;" id="readAllLinksButton" onclick="devActions()">Dev Action</button>
 				<button style="font-size:12px; display: block;" id="getModule" onclick="getModule()">Get Module Links</button>
-				<button style="font-size:12px; background-color:0d63fd; border: 0d63fd; color:white;" id="readLinksButton" onclick="readLinksButton_onclick([])">Selected Items only</button>
+				<button style="font-size:12px; background-color:0d63fd; border: 0d63fd; color:white;" id="readLinksButton" onclick="readLinksButton_onclick([],[])">Selected Items only</button>
 				<br>
 				</div>
 	
