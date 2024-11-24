@@ -22,7 +22,7 @@ lang_json = `{
     },
     {
       "id": "str006b",
-      "text": "Select operation. <li> - Whole Module button scans the whole module and creates Base Link links for all Embedded artifacts.</li><li> - Or Selected Modules process all Selected modules (can be long process). </li><li> - Or Selected Items button works in all list views.</li>"
+      "text": "Select operation."
     },
     {
       "id": "str007a",
