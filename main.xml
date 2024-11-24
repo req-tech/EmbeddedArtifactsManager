@@ -22,7 +22,7 @@
 				<script src="js/bootstrap.bundle.min.js"></script>
 
                 <!-- Custom JS-code -->
-				<script type="text/javascript" src="./js/main.js" charset="utf-8"></script> 
+				<script type="text/javascript" src="./js/main3.js" charset="utf-8"></script> 
 
 
                 <style>
@@ -81,7 +81,8 @@
 				<div style="font-size:12px;" id="buttonContainer">
 				Create links for Embedded Artifacts:
 				<button style="font-size:12px; display: block;" id="readAllLinksButton" onclick="devActions()">Dev Action</button>
-				<button style="font-size:12px; background-color:0d63fd; border: 0d63fd; color:white;" id="readLinksButton" onclick="readLinksButton_onclick()">Selected Items only</button>
+				<button style="font-size:12px; display: block;" id="getModule" onclick="getModule()">Get Module Links</button>
+				<button style="font-size:12px; background-color:0d63fd; border: 0d63fd; color:white;" id="readLinksButton" onclick="readLinksButton_onclick([])">Selected Items only</button>
 				<br>
 				</div>
 	

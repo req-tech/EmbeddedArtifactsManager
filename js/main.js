@@ -51,10 +51,44 @@ function toggleVisibility(divId, buttonId, showText, hideText) {
 }
 
 // Function for Dev actions
-function devActions() {
-    console.log('Dev actions');
-    console.log('Artifact:', JSON.stringify(widgetHandler.selArtRef[0]));
-    const results = getAllArtifactsFromProject();
+async function devActions() {
+    // console.log('Dev actions');
+    // console.log('Artifact:', JSON.stringify(widgetHandler.selArtRef[0]));
+    const responseData = await getAllArtifactsFromProject();
+    // Loop through the results
+    // console.log('Results:', responseData);
+    // Iterate over each key-value pair in the response
+    // for (const [key, value] of Object.entries(results)) {
+    //     // Get the type information
+    //     console.log('Key:', key);
+    //     const typeInfo = value["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"];
+        
+    //     // Check if the type is "Requirement"
+    //     if (typeInfo && Array.isArray(typeInfo)) {
+    //         const isRequirement = typeInfo.some(
+    //             item => item.value === "http://open-services.net/ns/rm#Requirement"
+    //         );
+    //         if (isRequirement) {
+    //             console.log(`Requirement found: ${key}`);
+    //         }
+    //     }
+    // }
+    for (const key in responseData) {
+        // console.log('Keyyy:', key);
+        if (responseData.hasOwnProperty(key)) {
+            const typeInfo = responseData[key]["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"];
+            
+            // Check if the type matches "Requirement"
+            if (typeInfo && Array.isArray(typeInfo)) {
+                const isRequirement = typeInfo.some(
+                    item => item.value === "http://open-services.net/ns/rm#Requirement"
+                );
+                if (isRequirement) {
+                    console.log(`Requirement found: ${key}`);
+                }
+            }
+        }
+    }
 }
 
 
@@ -65,13 +99,13 @@ async function getAllArtifactsFromProject() {
     const projectId = projectUriParts[projectUriParts.length - 1];
     const compUri = '_NO35cEqNEe-lXMAnwStbdQ'; //widgetHandler.selArtRef[0].componentUri;
     const project = '_Mks7EEqNEe-lXMAnwStbdQ';
-    console.log('Artifact:', JSON.stringify(widgetHandler.selArtRef[0]));
+    // console.log('Artifact:', JSON.stringify(widgetHandler.selArtRef[0]));
 
     try {
         // Get the current browser top level URL 
         const browserURLtop = window.parent.location.href;// Get the current browser URL
         const browserURL = window.location.href; // Get the current browser URL
-        console.log('Browser parent URL:', browserURLtop);
+        // console.log('Browser parent URL:', browserURLtop);
         const urlParts = browserURLtop.split('&');
         let componentUriOslc = '';
         if (urlParts[0].includes('showProjectDashboard')) {
@@ -92,9 +126,9 @@ async function getAllArtifactsFromProject() {
         const vvc = `&vvc.configuration=${encodeURIComponent(`https://clm.celeris.se/rm/cm/stream/${compUri}`)}`;
         //  const vvc = `&vvc.configuration=${encodeURIComponent(`https://clm.celeris.se/rm/cm/stream/${compUri}`)}`;
         const oslcPrefix = encodeURIComponent("oslc.prefix=dcterms=<http://purl.org/dc/terms/>,rm_nav=<http://jazz.net/ns/rm/navigation#>");
-        const oslcWhere = encodeURIComponent('oslc.where=dcterms:identifier>"228097"');
+        const oslcWhere = encodeURIComponent('oslc.where=dcterms:identifier=534');
         // const oslcWhere = encodeURIComponent('oslc.where=dcterms:modified>"2020-08-01T21:51:40.979Z"^^xsd:datetime');
-        const oslcSelect = encodeURIComponent("oslc.select=dcterms:identifier,rm_nav:parent");
+        const oslcSelect = encodeURIComponent("oslc.select=dcterms:identifier,dcterms:title");
         // const oslcPaging = encodeURIComponent("oslc.paging=true");
         // const oslcPageSize = encodeURIComponent("oslc.pageSize=200");
         const oslcPaging = "oslc.paging=true";
@@ -105,7 +139,7 @@ async function getAllArtifactsFromProject() {
         // let queryUrl = `${baseUrl}/views?${oslcQuery}&${projectURL}&${oslcPrefix}&${oslcWhere}&${oslcSelect}&${oslcPaging}&${oslcPageSize}`;
         console.log('Query URL:', queryUrl);
         // queryUrl = 'https://homie.byte.fi:9443/rm/views?oslc.query=true&projectURL=https%3A%2F%2Fhomie.byte.fi%3A9443%2Frm%2Fprocess%2Fproject-areas%2F_22yKMJFmEe-Oy5UELFqR4Q&oslc.prefix=dcterms%3D%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2F%3E%2Crm_nav%3D%3Chttp%3A%2F%2Fjazz.net%2Fns%2Frm%2Fnavigation%23%3E&oslc.where=dcterms%3Amodified%3E%222020-08-01T21%3A51%3A40.979Z%22%5E%5Exsd%3Adatetime&oslc.select=dcterms%3Aidentifier%2Crm_nav%3Aparent&oslc.paging=true&oslc.pageSize=200';
-        alert('Curl  URL:' + queryUrl);
+        // alert('Curl  URL:' + queryUrl);
 
         // Perform the GET request
         const response = await fetch(queryUrl, {
@@ -125,11 +159,12 @@ async function getAllArtifactsFromProject() {
         }
 
         const responseData = await response.text();
-        console.log('Response Data:', responseData);
+        // console.log('Response Data:', responseData);
+        console.log('************************************     *************************************');
 
         // Assuming you have a function to parse RDF/XML
-        const artifacts = parseArtifactsFromRDF(responseData);
-        return artifacts;
+        // const artifacts = parseArtifactsFromRDF(responseData);
+        return responseData;
     } catch (error) {
         console.error('Error while fetching project artifacts:', error);
         return [];
@@ -144,95 +179,223 @@ function parseArtifactsFromRDF(rdfData) {
     return [];
 }
 
+function createArtifactRef(uri, componentUri, moduleUri, format) {
+    return new Promise((resolve, reject) => {
+        try {
+            const artifactRef = new RM.ArtifactRef(uri, componentUri, moduleUri, format);
+            resolve(artifactRef);
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
 
-// Function to handle the Read Links button click
-async function readLinksButton_onclick() {
-    setContainerText("statusContainer", 'Loading...');
+async function getModule() {
+    RM.Client.getCurrentArtifact(async function(res) {
+        if (res.code !== RM.OperationResult.OPERATION_OK) {
+            console.log('Error:', res);
+            return;
+        }
+        const jsonObject = res;
 
-    if (!widgetHandler.selArtRef || widgetHandler.selArtRef.length === 0) {
-        alert('No text artifacts selected.');
-        return;
-    }
+        // Extract the format information
+        const format = jsonObject.data?.ref?.format;
+        const artifactFormat = jsonObject.data?.values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
+        
+        // Check if it is of type "Module"
+        if (format && format.endsWith("#Module") && artifactFormat === "Module") {
+            console.log("This is a type of Module.");
+        } else {
+            alert("You are not in a Module View.");
+            return;
+        }
+        const moduleUri = jsonObject.data?.ref?.uri;
+        const moduleBinding = await getModuleBinding(moduleUri);
+        const childBindings = moduleBinding[0]?.childBindings;
+        const componentUri = jsonObject.data?.ref?.componentUri;
+            
+        // console.log('Module Binding:', JSON.stringify(childBindings));
+        // Loop through the list using a for...of loop
+        let artifactRef = [];
+        for (const uri of childBindings) {
+            // console.log('URI:', uri);
+            // Create an ArtifactRef object
+            const textArtifactRef = await createArtifactRef(uri, componentUri, moduleUri, 'Text');
+            // const textArtifactRef = await new RM.ArtifactRef(uri, componentUri, moduleUri, 'Text');
+            artifactRef.push(textArtifactRef);
+            // const ress = await getArtifactWithEmbed(textArtifactRef);
+            // if (ress) {
+            //     // console.log('Embedded items:', JSON.stringify(ress.ref));
+            //     // console.log('Artifact Ref:', JSON.stringify(textArtifactRef));
+            //     // alert('Embedded items found in the Primary text.');
+            //     artifactRef.push(textArtifactRef);
+            // }
+            // setContainerText("statusContainer", `Now ${artifactRef.length} artifacts.`);
+        }
+        // console.log('Artifact Ref:', JSON.stringify(artifactRef));
+        // Loop through the list using a for...in loop  
+        // for (const artifactWithEmbed of artifactRef) {
+        //     console.log('Create links for Artifact:', artifactWithEmbed);
+        //     // Pass artifactRef to readLinksButton_onclick
+        await readLinksButton_onclick(artifactRef);
+        // }
+    });
+}
 
-    // counter for successful link creation and unsuccessful link creation
-    let totalLinks = 0;
-    let unsuccessfulLinks = 0;
+async function getArtifactWithEmbed(textArtifactRef) {
+    return new Promise((resolve, reject) => {
+        RM.Data.getAttributes(textArtifactRef, [RM.Data.Attributes.PRIMARY_TEXT, RM.Data.Attributes.FORMAT], function(ress) {
+            // console.log('Response from getAttributes:', ress);
+            if (!ress || !ress.data || !ress.data[0] || !ress.data[0].values) {
+                console.error('Invalid response structure:', ress);
+                resolve(null); // Skip to the next artifact
+                return;
+            }
 
-    for (let i = 0; i < widgetHandler.selArtRef.length; i++) {
-        RM.Data.getAttributes(widgetHandler.selArtRef[i], [RM.Data.Attributes.PRIMARY_TEXT, RM.Data.Attributes.FORMAT], async function (res) {
-            let primaryText = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/PrimaryText"];
-            let title = res.data[0].values["http://purl.org/dc/terms/title"];
-            let format = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"]; // http://www.ibm.com/xmlns/rdm/types/ArtifactFormat
-            console.log('Title:', title);
-            console.log('Primary Text:', primaryText);
-            console.log('Format:', format);
-            console.log(JSON.stringify(res));
+            // Add text artifact reference to the list
+            // console.log('Text Artifact:', JSON.stringify(ress));
+            let primaryText = ress.data[0].values["http://www.ibm.com/xmlns/rdm/types/PrimaryText"];
+            let title = ress.data[0].values["http://purl.org/dc/terms/title"];
+            let format = ress.data[0].values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
+            // console.log('Title:', title);
+            // console.log('Primary Text:', primaryText);
+            // console.log('Format:', format);
 
             // Process Item if it is a Text artifact else skip
-            if (format !== 'Text') { //http://www.ibm.com/xmlns/rdm/types/ArtifactFormats#Text
+            if (format !== 'Text') {
                 console.log('Artifact is not a Text artifact. Skipping...');
-                return; // Skip to the next artifact
+                resolve(null); // Skip to the next artifact
+                return;
             } 
 
-            const startRef = widgetHandler.selArtRef[i];
-            console.log('Artifact is a Text artifact. Processing...');
+            // console.log('Artifact is a Text artifact. Processing...');
             // Create a URL pattern to match URLs in the text that can be Wrapped Artifacts
             const urlPattern = /https?:\/\/[^\s"'>]+/g;
             // Extract all URLs
             const urls = primaryText.match(urlPattern);
-            // Get the current server's origin (protocol, hostname, and port)
-            const currentServer = window.location.origin;
-
-           
             // Check if the urls is not empty
             if (urls) {
-                // console.log('URLs found in the text.');
-                 // Filter URLs to only include those from the same server and containing 'rm/wrappedResources'
-                const filteredUrls = urls.filter(url => url.startsWith(currentServer) && url.toLowerCase().includes('rm/wrappedresources') );
-                console.log('Found Wrapped items: ',filteredUrls);
+                console.log('Embedded items found in the Primary text.');
+                resolve(textArtifactRef);
+            } else {
+                resolve(null);
+            }   
+        });
+    });
+}
+
+
+// Function to handle the Read Links button click, artifactRef is a list of artifact references
+async function processArtifact(startRef, primaryText, format, currentServer) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let totalEmbeds = 0;
+            // console.log('Artifact is a Text artifact. Processing...');
+            // Create a URL pattern to match URLs in the text that can be Wrapped Artifacts
+            const urlPattern = /https?:\/\/[^\s"'>]+/g;
+            // Extract all URLs
+            const urls = primaryText.match(urlPattern);
+            // Check if the urls is not empty
+            if (urls) {
+                // Filter URLs to only include those from the same server and containing 'rm/wrappedResources'
+                const filteredUrls = urls.filter(url => url.startsWith(currentServer) && url.toLowerCase().includes('rm/wrappedresources'));
+                console.log('Found Wrapped items: ', filteredUrls.length);
                 // Let's create Embeds links for the wrapped items
                 // Loop through the filtered URLs
                 for (let j = 0; j < filteredUrls.length; j++) {
                     // Get the URI of the wrapped item
-                    const wrAtrifactUri = filteredUrls[j].split('?')[0]; //.split('?').pop(); const urlWithoutQuery = url.split('?')[0];
-                    const targetUri = wrAtrifactUri.replace('wrappedResources', 'resources');
-                    console.log('Wrapped Artifact URI:', targetUri);
+                    const wrArtifactUri = filteredUrls[j].split('?')[0];
+                    const targetUri = wrArtifactUri.replace('wrappedResources', 'resources');
+                    // console.log('Wrapped Artifact URI:', targetUri);
                     // Create a new ArtifactRef object
                     const textArtifactRef = new RM.ArtifactRef(startRef.uri, startRef.componentUri, null, format);
-                    console.log('Text Artifact Ref:', JSON.stringify(textArtifactRef));
+                    // console.log('Text Artifact Ref:', JSON.stringify(textArtifactRef));
                     const targetArtifactRef = new RM.ArtifactRef(targetUri, startRef.componentUri, null, 'WrapperResource');
-                    console.log('Wrapped Artifact Ref:', JSON.stringify(targetArtifactRef));
+                    // console.log('Wrapped Artifact Ref:', JSON.stringify(targetArtifactRef));
                     // Create a Link between the Text Artifact and the Wrapped Artifact
                     try {
-                        totalLinks++;
                         await updateLinkContext(textArtifactRef, RM.Data.LinkTypes.EMBEDS, targetArtifactRef);
-                        setContainerText("statusContainer", `Created ${totalLinks} links.`);
+                        totalEmbeds++;
                     } catch (error) {
-                        unsuccessfulLinks++;
                         console.error('Error updating link context:', error);
+                        reject(error);
                     }
                 }
-            
+            }
+            resolve(totalEmbeds);
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+async function readArtifact(artifactRef) {
+    return new Promise((resolve, reject) => {
+        RM.Data.getAttributes(artifactRef, [RM.Data.Attributes.PRIMARY_TEXT, RM.Data.Attributes.FORMAT], function(res) {
+            if (res.code !== RM.OperationResult.OPERATION_OK) {
+                reportError(res);
+                reject(res);
+            } else {
+                const format = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
+                // console.log('Format:', format);
+                if (format !== 'Text') {
+                    console.log('Artifact is not a Text artifact. Skipping...');
+                    resolve(null); // Resolve with null to indicate skipping
+                } else {
+                    const primaryText = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/PrimaryText"];
+                    // console.log('Response:', JSON.stringify(primaryText));
+                    resolve(primaryText);
+                }
             }
         });
+    });
+}
+// Calling function
+async function readLinksButton_onclick(artifactRef) {
+    setContainerText("statusContainer", 'Loading...');
+    if (artifactRef.length === 0) {
+        console.log('Processing selected artifacts.');
+        artifactRef = widgetHandler.selArtRef;
     }
-    
-    // From this on this is not correct
-    widgetHandler.availableLinks = [];
-    if (!widgetHandler.selArtRef || widgetHandler.selArtRef.length === 0) {
-        setContainerText("statusContainer", 'No text artifact selected.');
+
+    if (!artifactRef || artifactRef.length === 0) {
+        alert('No text artifacts selected.');
         return;
     }
-    // await readLinks(widgetHandler.selArtRef);
-    // setContainerText("statusContainer", 'Select Link types to convert.');
-    
-    // if (widgetHandler.availableLinks.length !== 0) {
-    //     const formLength = displayLinkOptions(widgetHandler.availableLinks);
-    //     setContainerText("statusContainer", 'Select Link types to convert.');
-    //     toggleElementVisibility('convertButtonContainer', 'block');
-    // } else {
-    //     setContainerText("statusContainer", 'No outgoing links found in selected items.');
-    // }
+    // console.log('Processing artifacts:', artifactRef.length);
+    // counter for successful link creation and unsuccessful link creation
+    let totalLinks = 0;
+    let totalArtifacts = 0;
+    let unsuccessfulLinks = 0;
+    // Get the current server's origin (protocol, hostname, and port)
+    const currentServer = window.location.origin;
+
+    for (let i = 0; i < artifactRef.length; i++) {
+        // console.log('Processing Artifact:', JSON.stringify(artifactRef[i]));
+        try {
+            // const artifactsWithEmbeds = [];
+            const primaryText = await readArtifact(artifactRef[i]);
+
+            if (!primaryText) {
+                console.error('Primary text not found.');
+                continue; // Skip to the next artifact
+            }
+
+            const startRef = artifactRef[i];
+            const embedsProcessed = await processArtifact(startRef, primaryText, "Text", currentServer);
+            totalLinks += embedsProcessed;
+            totalArtifacts++;
+            setContainerText("statusContainer", `Created ${totalLinks} links for ${totalArtifacts} artifacts scanned.`);
+        } catch (error) {
+            console.error('Error fetching attributes:', error);
+            unsuccessfulLinks++;
+        }
+    }
+
+    if (totalLinks === 0) {
+        setContainerText("statusContainer", 'No embedded Artifacts without Embeds Link found.');
+        return;
+    }
 }
 
 // Function to read links of selected artifacts
@@ -259,7 +422,7 @@ function displayLinkOptions(links) {
     const linkTypeCount = {};
     links.forEach((link) => {
         if (link.art.moduleUri != null && link.linktype.direction !== '_OBJ') {
-            console.log('Linkki:', JSON.stringify(link));
+            // console.log('Link:', JSON.stringify(link));
             let linkTypeString = typeof link.linktype === 'object' ? link.linktype.uri.split('/').pop() : link.linktype;
             linkTypeString = linkTypeString === 'Link' ? 'Link To' : linkTypeString;
 
@@ -270,7 +433,7 @@ function displayLinkOptions(links) {
         }
     });
 
-    console.log('Link type count:', JSON.stringify(linkTypeCount));
+    // console.log('Link type count:', JSON.stringify(linkTypeCount));
 
     Object.entries(linkTypeCount).forEach(([linkType, linkGroup], index) => {
         const checkbox = document.createElement("input");
@@ -438,25 +601,29 @@ function setContainerText(containerId, string) {
 }
 
 // Function to get module binding
-async function getModuleBinding(moduleUri) {
-    try {
-        const response = await fetch(`${moduleUri}/structure`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'DoorsRP-Request-Type': 'public 2.0'
-            },
-            credentials: 'include'
-        });
+function getModuleBinding(moduleUri) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const response = await fetch(`${moduleUri}/structure`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'DoorsRP-Request-Type': 'public 2.0'
+                },
+                credentials: 'include'
+            });
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch module binding. Response status: ' + response.status);
+            if (!response.ok) {
+                reject(new Error('Failed to fetch module binding. Response status: ' + response.status));
+            } else {
+                const data = await response.json();
+                resolve(data);
+            }
+        } catch (error) {
+            console.error(error);
+            reject(error);
         }
-        return await response.json();
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
+    });
 }
 
 // Function to get bound artifact URI
@@ -475,7 +642,7 @@ function getLinks(artifact) {
         RM.Data.getLinkedArtifacts(artifact, function(response) {
             if (response && response.code === RM.OperationResult.OPERATION_OK) {
                 // if response.data.artifactLinks.length is defined
-                console.log('Response:', JSON.stringify(response));
+                // console.log('Response:', JSON.stringify(response));
                 if (response.data.artifactLinks.length === 0) {
                     // console.log('No links found for artifact:');
                     resolve([]);
@@ -489,7 +656,7 @@ function getLinks(artifact) {
                 //     const words = link.linktype.uri.split(' ');
                 //     return link.art.moduleUri != null && link.linktype.direction !== '_OBJ' && words.length === 1;
                 // }));
-                console.log('GetLinks:', JSON.stringify(response.data.artifactLinks.filter(link => link.art.moduleUri != null && link.linktype.direction !== '_OBJ')));
+                // console.log('GetLinks:', JSON.stringify(response.data.artifactLinks.filter(link => link.art.moduleUri != null && link.linktype.direction !== '_OBJ')));
                 // TODO: link contains(' ')
                 resolve(response.data.artifactLinks.filter(link => link.art.moduleUri != null && link.linktype.direction !== '_OBJ'));
                 }
