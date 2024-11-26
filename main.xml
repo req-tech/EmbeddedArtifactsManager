@@ -14,6 +14,9 @@
                 <!-- Language settings -->
                 <meta charset="utf-8">
                 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />    
+				<link rel="stylesheet" href="https://unpkg.com/carbon-components/css/carbon-components.min.css">
+				<script src="https://unpkg.com/carbon-components/scripts/carbon-components.min.js"></script>
+
 				<script type="text/javascript" src="./lang_en.js" charset="utf-8"></script>       
     
 				<!-- Importing bootstrap and jQuery -->
@@ -42,7 +45,7 @@
                         width: 100%;
                         }
 
-                        td, th {
+					td, th {
                         border: 1px solid #dddddd;
                         text-align: left;
                         padding: 4px;
@@ -50,6 +53,15 @@
 
                         tr:nth-child(even) {
                         background-color: #dddddd;
+                    }
+					.custom-row {
+                        padding-top: 5px;
+                        padding-bottom: 5px;
+                        padding-left: 8px;
+                    }
+                    p:empty::before {
+                        content:"";
+                        display:inline-block;
                     }
                 </style>
             </head>
@@ -78,31 +90,27 @@
 					<div style="font-size:12px; display: none;" id='settings_div'>
 					 This Widget has no settings.
 					</div>
-				<div style="font-size:12px;" id="buttonContainer">
-				Create links for Embedded Artifacts: <br> 
+
+				<!-- Div for the form with links -->
+				<div class="bx--grid" style="padding-right:0; padding-left:0">
+                    <div class="bx--col custom-row">
+						<div class="bx--form-item">
+						<p class="bx--form__helper-text"><Strong>Create links for Embedded Artifacts in:</Strong> </p>
+						<button id="getModule" class="bx--btn bx--btn--primary bx--btn--md" style="width:100%;max-width:none;" onclick="getModule()">Whole Module</button>
+						 </div>
+					</div>
+					<div class="bx--col custom-row">
+						<button class="bx--btn bx--btn--default bx--btn--md" style="width:100%;max-width:none;" id="readAllModulesButtonOnClick" onclick="readAllModulesButtonOnClick([],[])">Selected Modules</button>
+					</div>
+					<div class="bx--col custom-row">
+						<button class="bx--btn bx--btn--default bx--btn--md" style="width:100%;max-width:none;" id="readLinksButton" onclick="readLinksButton_onclick([],[])">Selected Items</button>						
+					</div>
+					<div class="bx--col custom-row bx--form__helper-text" id="statusContainer">
+					</div>
+					<div class="bx--col custom-row" id="reloadContainer">
+						<button class="bx--btn bx--btn--primary bx--btn--md" style="width:100%;max-width:none;display: none;" id="reloadButton" onclick="window.top.location.reload()">Reload Page</button>
+					</div>
 				
-				<button style="font-size:12px; background-color:0d63fd; border: 0d63fd; color:white;"" id="getModule" onclick="getModule()">Whole Module</button>
-				<button style="font-size:12px;" id="readAllModulesButtonOnClick" onclick="readAllModulesButtonOnClick([],[])">Selected Modules</button>
-				<button style="font-size:12px;" id="readLinksButton" onclick="readLinksButton_onclick([],[])">Selected Items</button>
-				
-				<br>
-				</div>
-	
-				<!-- Div for additional messages or loading indicator -->
-				<div id="statusContainer" style="font-size:12px;"> </div>
-
-				<div id="linkContainer">
-				<!-- This is where the form with links will be appended -->
-				</div>
-
-				<!-- Div for Link conversion buttons - Function values is whether to delete Module Links -->
-				<div style="display: none;" id="convertButtonContainer">
-				<button style="font-size:12px; id="convertLinksButton" onclick="convertLinksButtonOnClick(true)">Convert to Base Links</button>
-				<button style="font-size:12px; id="createBaseLinksButton" onclick="convertLinksButtonOnClick(false)">Add Base Links</button>
-				</div>
-
-				<div id="reloadContainer">
-				<button style="font-size:12px; display: none;" id="reloadButton" onclick="window.top.location.reload()">Reload Page</button>
 				</div>
 			</body>
 			</html>
