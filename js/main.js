@@ -363,19 +363,9 @@ async function readAllModulesButtonOnClick() {
     widgetHandler.availableLinks = [];
     for (let i = 0; i < widgetHandler.selArtRef.length; i++) {
         const moduleUri = widgetHandler.selArtRef[i].uri;
-        // const moduleBinding = await getModuleBinding(moduleUri);
-        // // const childBindings = moduleBinding[0]?.childBindings;
         const componentUri = widgetHandler.selArtRef[i].componentUri;
-        // // console.log('Module Binding:', JSON.stringify(childBindings));
-        // // Loop through the list using a for...of loop
-        // let artifactRef = [];
-        // const moduleUri = jsonObject.data?.ref?.uri;
         const moduleBinding = await getModuleBinding(moduleUri);
-        // console.log('Module Binding:', JSON.stringify(moduleBinding));
-        // const childBindings = moduleBinding[0]?.childBindings;
-        // const componentUri = jsonObject.data?.ref?.componentUri;          
-        // console.log('Module Binding:', JSON.stringify(childBindings));
-        // Loop through the list using a for...of loop
+
         let artifactRef = [];
         for (const artifact of moduleBinding) {
             // console.log('URI:', uri);
@@ -387,11 +377,6 @@ async function readAllModulesButtonOnClick() {
                 console.log('Text Artifact Uri:', JSON.stringify(textArtifactRef.uri));
             }
         }
-        // for (const uri of childBindings) {
-        //     // Create an ArtifactRef object sub function to enable await
-        //     const textArtifactRef = await createArtifactRef(uri, componentUri, moduleUri, 'Text');
-        //     artifactRef.push(textArtifactRef);
-        // }
         const resultCounts = await readLinksButton_onclick(artifactRef, moduleBinding);
         counts.totalLinks += resultCounts.totalLinks;
         counts.totalArtifacts += resultCounts.totalArtifacts;
@@ -404,9 +389,9 @@ async function readAllModulesButtonOnClick() {
     let moduleOrModules = 'modules';
     if ( counts.totalLinks === 1) { linkOrLinks = 'link'; }
     if ( counts.totalArtifacts === 1) { artifactOrArtifacts = 'artifact'; }
-    if ( totalModules === 1) { moduleOrModules = 'module';
+    if ( totalModules === 1) { moduleOrModules = 'module' };
     // Display the status message
-    setContainerText("statusContainer", `Searched links for ${totalModules} ${moduleOrModules}. <br> Created ${counts.totalLinks} new ${linkOrLinks} for ${counts.totalArtifacts} Text ${artifactOrArtifacts} scanned.`);
+    setContainerText("statusContainer", `Searched links for ${totalModules} ${modu}. <br> Created ${counts.totalLinks} new ${linkOrLinks} for ${counts.totalArtifacts} Text ${artifactOrArtifacts} scanned.`);
     toggleElementVisibility('reloadButton', 'block');
 }
 
@@ -569,17 +554,6 @@ function getLinks(artifact) {
                     // console.log('No links found for artifact:');
                     resolve([]);
                 } else {
-                // Filter out links with two words in the linktype.uri
-                //     console.log('GetLinks:', JSON.stringify(response.data.artifactLinks.filter(link => {
-                //     const words = link.linktype.uri.split(' ');
-                //     return link.art.moduleUri != null && link.linktype.direction !== '_OBJ' && words.length === 1;
-                // })));
-                // resolve(response.data.artifactLinks.filter(link => {
-                //     const words = link.linktype.uri.split(' ');
-                //     return link.art.moduleUri != null && link.linktype.direction !== '_OBJ' && words.length === 1;
-                // }));
-                // console.log('GetLinks:', JSON.stringify(response.data.artifactLinks.filter(link => link.art.moduleUri != null && link.linktype.direction !== '_OBJ')));
-                // TODO: link contains(' ')
                 resolve(response.data.artifactLinks.filter(link => link.art.moduleUri != null && link.linktype.direction !== '_OBJ'));
                 }
 
@@ -590,58 +564,3 @@ function getLinks(artifact) {
         });
     });
 }
-
-// Function to handle Read All Links button click
-// async function readAllLinksButtonOnClick() {
-//     setContainerText("statusContainer", 'Loading...');
-//     widgetHandler.availableLinks = [];
-//     try {
-//         const response = await new Promise((resolve, reject) => {
-//             RM.Client.getCurrentArtifact(function(response) {
-//                 if (response.code === RM.OperationResult.OPERATION_OK) {
-//                     resolve(response);
-//                 } else {
-//                     reject('Error retrieving current artifact.');
-//                 }
-//             });
-//         });
-
-//         if (response.data.values[RM.Data.Attributes.FORMAT] === "Module") {
-//             const res = await new Promise((resolve, reject) => {
-//                 RM.Data.getContentsAttributes(response.data.ref, [RM.Data.Attributes.PRIMARY_TEXT, 'http://purl.org/dc/terms/identifier'], function(res) {
-//                     if (res.code === RM.OperationResult.OPERATION_OK) {
-//                         resolve(res);
-//                     } else {
-//                         reject('Error reading module contents.');
-//                     }
-//                 });
-//             });
-       
-//             widgetHandler.selArtRef = [res.data[0]];
-//             for (const artifact of res.data) {
-//                 // console.log('Artifact:', JSON.stringify(artifact));
-//                 try {
-//                     const links = await getLinks(artifact.ref);
-//                     widgetHandler.availableLinks.push(...links);
-//                 } catch (error) {
-//                     console.error('Error fetching links:', error);
-//                 }
-//             }
-            
-//             // if (widgetHandler.availableLinks.length !== 0) {
-//                 const formLength = displayLinkOptions(widgetHandler.availableLinks);
-//             if (formLength !== 0) {
-//                 setContainerText("statusContainer", 'Select Link types to convert.');
-//                 toggleElementVisibility('convertButtonContainer', 'block');
-//             } else {
-//                 setContainerText("statusContainer", 'No outgoing Module links found in the module.');
-//                 toggleElementVisibility('convertButtonContainer', 'none');
-//             }
-
-//         } else {
-//             alert('You are not in a Module.');
-//         }
-//     } catch (error) {
-//         alert(error);
-//     }
-// }
