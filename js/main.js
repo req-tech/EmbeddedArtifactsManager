@@ -398,7 +398,15 @@ async function readAllModulesButtonOnClick() {
         counts.unsuccessfulLinks += resultCounts.unsuccessfulLinks;
         totalModules++;
     }
-    setContainerText("statusContainer", `Searched links for ${totalModules} modules. <br> Created ${counts.totalLinks} new links for ${counts.totalArtifacts} Text artifacts scanned.`);
+    // Handle pluralization
+    let linkOrLinks = 'links';
+    let artifactOrArtifacts = 'artifacts';
+    let moduleOrModules = 'modules';
+    if ( counts.totalLinks === 1) { linkOrLinks = 'link'; }
+    if ( counts.totalArtifacts === 1) { artifactOrArtifacts = 'artifact'; }
+    if ( totalModules === 1) { moduleOrModules = 'module';
+    // Display the status message
+    setContainerText("statusContainer", `Searched links for ${totalModules} ${moduleOrModules}. <br> Created ${counts.totalLinks} new ${linkOrLinks} for ${counts.totalArtifacts} Text ${artifactOrArtifacts} scanned.`);
     toggleElementVisibility('reloadButton', 'block');
 }
 

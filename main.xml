@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Module specificationVersion="1.3">
-<ModulePrefs title="Embedded Artifacts Manager" height="130" scrolling="true">
+<ModulePrefs title="Embedded Links Creator" height="130" scrolling="true">
 	<Require feature="com.ibm.rdm.rm.api"/>
 	<Require feature="dynamic-height"/>
 	
