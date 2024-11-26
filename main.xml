@@ -95,7 +95,7 @@
 				<div class="bx--grid" style="padding-right:0; padding-left:0">
                     <div class="bx--col custom-row">
 						<div class="bx--form-item">
-						<p class="bx--form__helper-text"><Strong>Create links for Embedded Artifacts in:</Strong> </p>
+						<p class="bx--form__helper-text"><Strong>Create links for Embedded Artifacts for:</Strong> </p>
 						<button id="getModule" class="bx--btn bx--btn--primary bx--btn--md" style="width:100%;max-width:none;" onclick="getModule()">Whole Module</button>
 						 </div>
 					</div>
