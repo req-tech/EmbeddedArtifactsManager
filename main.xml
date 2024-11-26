@@ -22,7 +22,7 @@
 				<script src="js/bootstrap.bundle.min.js"></script>
 
                 <!-- Custom JS-code -->
-				<script type="text/javascript" src="./js/main.js" charset="utf-8"></script> 
+				<script type="text/javascript" src="./js/main_elc.js" charset="utf-8"></script> 
 
 
                 <style>
