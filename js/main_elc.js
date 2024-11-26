@@ -439,7 +439,13 @@ async function readLinksButton_onclick(artifactRef , moduleBinding) {
             totalArtifacts++;
             const embedsProcessed = await processArtifact(startUri, primaryText, startRef.componentUri, "Text", currentServer);
             totalLinks += embedsProcessed;
-            setContainerText("statusContainer", `Created ${totalLinks} links for ${totalArtifacts} artifacts scanned.`);
+            // Handle pluralization
+            let linkOrLinks = 'links';
+            let artifactOrArtifacts = 'artifacts';
+            if (totalLinks === 1) { linkOrLinks = 'link'; }
+            if (totalArtifacts === 1) { artifactOrArtifacts = 'artifact'; }
+
+            setContainerText("statusContainer", `Created ${totalLinks} ${linkOrLinks} for ${totalArtifacts} ${artifactOrArtifacts} scanned.`);
         } catch (error) {
             console.error('Error fetching attributes:', error);
             unsuccessfulLinks++;
