@@ -402,7 +402,7 @@ function getModuleBinding(moduleUri) {
             });
 
             if (!response.ok) {
-                setContainerText('moduleStatusContainer','Artifacts and modules selected. Use Selected Items Button to process Text Format artifacts.');
+                setContainerText('moduleStatusContainer','Text Artifacts in selection. Use Selected Items Button to process Text Format artifacts.');
                 setContainerText("statusContainer", '');
                 resolve(new Error('Failed to fetch module binding. Response status: ' + response.status));
             } else {
@@ -475,7 +475,7 @@ function updateStatusAndButtons(counts) {
     if (counts.totalModules === 1) { moduleOrModules = 'module'; }
     if (counts.totalModules !== 0) { moduleInfo = ` in ${counts.totalModules} ${moduleOrModules} `; }
 
-    setContainerText("statusContainer", `Found ${counts.totalLinks} ${linkOrLinks} for ${counts.totalArtifacts} ${artifactOrArtifacts} scanned${moduleInfo}.`);
+    setContainerText("statusContainer", `Found ${counts.totalLinks} missing ${linkOrLinks} for ${counts.totalArtifacts} ${artifactOrArtifacts} scanned${moduleInfo}.`);
     if ( counts.totalLinks !== 0) {
         setContainerText("moduleStatusContainer", `Click Create Links Button to create missing links.`);
         toggleElementVisibility('createLinksContainer', 'block');
@@ -505,7 +505,7 @@ function readAllLinks(artifactRef, moduleBinding) {
             for (let i = 0; i < artifactRef.length; i++) {
                 if (!run) {
                     setContainerText("moduleStatusContainer", 'Stopped.');
-                    break;
+                    return 'Stopped';
                 }
                 // console.log('Processing Artifact:', JSON.stringify(artifactRef[i]));
                 try {
@@ -549,7 +549,7 @@ function readAllLinks(artifactRef, moduleBinding) {
                     if (totalLinks === 1) { linkOrLinks = 'link'; }
                     if (totalArtifacts === 1) { artifactOrArtifacts = 'artifact'; }
 
-                    setContainerText("statusContainer", `Found ${totalLinks} ${linkOrLinks} for ${totalArtifacts} ${artifactOrArtifacts} scanned. ${mixedList}`);
+                    setContainerText("statusContainer", `Found ${totalLinks} missing ${linkOrLinks} for ${totalArtifacts} ${artifactOrArtifacts} scanned. ${mixedList}`);
                 } catch (error) {
                     console.error('Error fetching attributes:', error);
                     // totalModules++;
@@ -598,7 +598,6 @@ async function readWholeModule() {
             // Create Artifact Ref for each artifact in the module so that their PRIMARY_TEXT can be read 
             let artifactRef = [];
             for (const artifact of moduleBinding) {
-                // console.log('URI:', uri);
                 // if artifact.uri isHeading value is not true and artifact's isStructureRoot is not true
                 if (!artifact.isHeading && !artifact.isStructureRoot) {
                     // Create an ArtifactRef object sub function to enable await
@@ -611,6 +610,10 @@ async function readWholeModule() {
             }
             // console.log('Text Artifact Array:', JSON.stringify(artifactRef)); 
             const resultCounts = await readAllLinks(artifactRef, moduleBinding);
+            if (resultCounts === 'Stopped') {
+                setContainerText("statusContainer", 'Stopped.');
+                return;
+            }
             counts.totalLinks += resultCounts.totalLinks;
             counts.totalArtifacts += resultCounts.totalArtifacts;
             counts.totalModules++;
@@ -626,13 +629,17 @@ async function readSelectedLinksOnClick() {
     setContainerText("moduleStatusContainer", '');
     let counts = { totalLinks: 0, totalArtifacts: 0, totalModules: 0 };
     // Check that there are objects in the artifactRef
-    if (widgetHandler.selArtRef === 0) { // When clicking the button get [] as artifactRef
+    if (widgetHandler.selArtRef.length === 0) { // When clicking the button get [] as artifactRef
         // console.log('Processing selected artifacts.');
         alert('No artifacts selected. Select Artifacts from Module or Project View.');
         return;
     } 
     // Read links of the array of selected artifacts
     const resultCounts = await readAllLinks(widgetHandler.selArtRef, []);
+    if (resultCounts === 'Stopped') {
+        setContainerText("statusContainer", 'Stopped.');
+        return;
+    }
     counts.totalLinks += resultCounts.totalLinks;
     counts.totalArtifacts += resultCounts.totalArtifacts;
     updateStatusAndButtons(counts);
@@ -648,8 +655,6 @@ async function readAllModulesButtonOnClick() {
     }
 
     setContainerText("moduleStatusContainer", 'Processing Modules...');
-    // toggleElementVisibility('stopRunContainer', 'block');
-    // run = true;
     // Loop through all selected modules
     for (let i = 0; i < widgetHandler.selArtRef.length; i++) {
         setContainerText("moduleStatusContainer", `Processing Module ${i + 1} of ${widgetHandler.selArtRef.length}.`);
@@ -672,6 +677,10 @@ async function readAllModulesButtonOnClick() {
             }
         }
         const resultCounts = await readAllLinks(artifactRef, moduleBinding);
+        if (resultCounts === 'Stopped') {
+            setContainerText("statusContainer", 'Stopped.');
+            return;
+        }
         counts.totalLinks += resultCounts.totalLinks;
         counts.totalArtifacts += resultCounts.totalArtifacts;
         counts.totalModules++;
