@@ -513,9 +513,9 @@ function readAllLinks(artifactRef, moduleBinding) {
                         const moduleUri = artifactRef[i].moduleUri;
                         moduleBinding = await getModuleBinding(moduleUri);
                     }
-                    // const artifactsWithEmbeds = [];
+
                     const primaryText = await readArtifact(artifactRef[i]);
-                    console.log('Primary Text:', primaryText, primaryText == 'Module' );
+                    // console.log('Primary Text:', primaryText, primaryText == 'Module' );
                     if ( primaryText == 'Module' ) {
                         mixedList = 'You have modules mixed in artifact selection';
                         alert(`You have modules mixed in artifact selection. Please select artifacts or Use Selected Modules Button.`);
