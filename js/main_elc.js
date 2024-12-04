@@ -1,17 +1,30 @@
 // Initialize GLOBAL variables
 const widgetHandler = {
     selArtRef: [],
-    availableLinks: [],
+    allLinks: [],
     targetContext: "base", // default context
     selectAllLinks: false,
 };
 
 // Subscribe to artifact selection event
 RM.Event.subscribe(RM.Event.ARTIFACT_SELECTED, onSelection);
+RM.Event.subscribe(RM.Event.ARTIFACT_OPENED, onOpen);
+
+let run = true;
+// Allow to stop long lasting Module search operation
+function stopRun() {
+    run = false;
+    toggleElementVisibility('stopRunContainer', 'none');
+}
 
 // Function to handle artifact selection event
 function onSelection(artifacts) {
     widgetHandler.selArtRef = artifacts || [];
+}
+
+function onOpen(artifact) {
+    // alert('Artifact Opened');
+    widgetHandler.selArtRef = [];
 }
 
 // Function to adjust the window height
@@ -23,6 +36,17 @@ function adjustHeight() {
 function onBodyLoad() {
     loadLanguage(); // Load the text according to the language file set in main.xml
     adjustHeight();
+}
+
+// Function to programmatically click the right panel Refresh button
+function clickRefreshButton() {
+    // Select the button using its Title attribute
+    const buttonElement = top.document.querySelector('[title="Refresh"]');
+    buttonElement.click();
+    toggleElementVisibility('reloadContainer', 'none');
+    setContainerText("statusContainer", '');
+    setContainerText("moduleStatusContainer", '');
+    widgetHandler.selArtRef = [];
 }
 
 // display the instructions on/off
@@ -67,6 +91,13 @@ function toggleVisibility(divId, buttonId, showText, hideText) {
         div.classList.add("hidden");
         button.innerHTML = showText;
     }
+    adjustHeight();
+}
+
+// Function to set container text
+function setContainerText(containerId, string) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = string;
     adjustHeight();
 }
 
@@ -203,94 +234,9 @@ function createArtifactRef(uri, componentUri, moduleUri, format) {
     });
 }
 
-async function getModule() {
-    const browserURLtop = window.parent.location.href;// Get the current browser URL
-    if ( browserURLtop.includes('showArtifactPage' )) {
-        RM.Client.getCurrentArtifact(async function(res) {
-            if (res.code !== RM.OperationResult.OPERATION_OK) {
-                console.log('Error:', res);
-                return;
-            }
-            const jsonObject = res;
-            console.log('Response:', JSON.stringify(jsonObject));
-            
-
-            // Extract the format information
-            const format = jsonObject.data?.ref?.format;
-            const artifactFormat = jsonObject.data?.values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
-            
-            // Check if it is of type "Module"
-            if (format && format.endsWith("#Module") && artifactFormat === "Module" && browserURLtop.includes('showArtifactPage')) {
-                console.log("This is a type of Module.");
-            } else {
-                alert("You are not in a Module View.");
-                return;
-            }
-            console.log('Module URI:', jsonObject.data?.ref?.uri);
-            const moduleUri = jsonObject.data?.ref?.uri;
-            const moduleBinding = await getModuleBinding(moduleUri);
-            console.log('Module Binding:', JSON.stringify(moduleBinding));
-            // const childBindings = moduleBinding[0]?.childBindings;
-            const componentUri = jsonObject.data?.ref?.componentUri;          
-            // console.log('Module Binding:', JSON.stringify(childBindings));
-            // Loop through the list using a for...of loop
-            let artifactRef = [];
-            for (const artifact of moduleBinding) {
-                // console.log('URI:', uri);
-                // if artifact.uri isHeading value is not true and artifact's isStructureRoot is not true
-                if (!artifact.isHeading && !artifact.isStructureRoot) {
-                    // Create an ArtifactRef object sub function to enable await
-                    const textArtifactRef = await createArtifactRef(artifact.uri, componentUri, moduleUri, 'Text');
-                    artifactRef.push(textArtifactRef);
-                    console.log('Text Artifact Uri:', JSON.stringify(textArtifactRef.uri));
-                }
-            }
-            await readLinksButton_onclick(artifactRef, moduleBinding);
-            toggleElementVisibility('reloadButton', 'block');
-        });
-    } else {
-        alert('You are not in a Module View.');
-    }
-}
-
-async function getArtifactWithEmbed(textArtifactRef) {
-    return new Promise((resolve, reject) => {
-        RM.Data.getAttributes(textArtifactRef, [RM.Data.Attributes.PRIMARY_TEXT, RM.Data.Attributes.FORMAT], function(ress) {
-            // console.log('Response from getAttributes:', ress);
-            if (!ress || !ress.data || !ress.data[0] || !ress.data[0].values) {
-                console.error('Invalid response structure:', ress);
-                resolve(null); // Skip to the next artifact
-                return;
-            }
-            // Add text artifact reference to the list
-            let primaryText = ress.data[0].values["http://www.ibm.com/xmlns/rdm/types/PrimaryText"];
-            let title = ress.data[0].values["http://purl.org/dc/terms/title"];
-            let format = ress.data[0].values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
-            // Process Item if it is a Text artifact else skip
-            if (format !== 'Text') {
-                console.log('Artifact is not a Text artifact. Skipping...');
-                resolve(null); // Skip to the next artifact
-                return;
-            } 
-            // console.log('Artifact is a Text artifact. Processing...');
-            // Create a URL pattern to match URLs in the text that can be Wrapped Artifacts
-            const urlPattern = /https?:\/\/[^\s"'>]+/g;
-            // Extract all URLs
-            const urls = primaryText.match(urlPattern);
-            // Check if the urls is not empty
-            if (urls) {
-                console.log('Embedded items found in the Primary text.');
-                resolve(textArtifactRef);
-            } else {
-                resolve(null);
-            }   
-        });
-    });
-}
-
-
 // Function to handle the Read Links button click, artifactRef is a list of artifact references
-async function processArtifact(startRefUri, primaryText, componentUri, format, currentServer) {
+async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, format, currentServer) {
+    // console.log('baseStartRefUri:', JSON.stringify(baseStartRefUri));
     return new Promise(async (resolve, reject) => {
         try {
             let totalEmbeds = 0;
@@ -302,7 +248,7 @@ async function processArtifact(startRefUri, primaryText, componentUri, format, c
             if (urls) {
                 // Filter URLs to only include those from the same server and containing 'rm/wrappedResources'
                 const filteredUrls = urls.filter(url => url.startsWith(currentServer) && url.toLowerCase().includes('rm/wrappedresources'));
-                console.log('Found Wrapped items: ', filteredUrls.length);
+                // console.log('Found Wrapped items: ', filteredUrls.length);
                 // Loop through the filtered URLs
                 for (let j = 0; j < filteredUrls.length; j++) {
                     // Get the URI of the wrapped item
@@ -310,18 +256,50 @@ async function processArtifact(startRefUri, primaryText, componentUri, format, c
                     const targetUri = wrArtifactUri.replace('wrappedResources', 'resources');
                     // console.log('Wrapped Artifact URI:', targetUri);
                     // Create a new ArtifactRef object    
-                    const textArtifactRef = new RM.ArtifactRef(startRefUri, componentUri, null, format);
-                    console.log('Text Artifact Ref:', JSON.stringify(textArtifactRef));
+                    const textArtifactRef = new RM.ArtifactRef(baseStartRefUri, componentUri, null, format);
+                    // console.log('Text Artifact Ref:', JSON.stringify(textArtifactRef));
                     const targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, 'WrapperResource');
-                    console.log('Wrapped Artifact Ref:', JSON.stringify(targetArtifactRef));
-                    // Create a Link between the Text Artifact and the Wrapped Artifact
-                    try {
-                        await updateLinkContext(textArtifactRef, RM.Data.LinkTypes.EMBEDS, targetArtifactRef);
-                        totalEmbeds++;
-                    } catch (error) {
-                        console.error('Error updating link context:', error);
-                        reject(error);
-                    }
+                    // console.log('Wrapped Artifact Ref:', JSON.stringify(targetArtifactRef));
+                    // Check if the link already exists
+                    await getLinksRaw(textArtifactRef).then(async (response) => {
+                        let linkExists = false;
+                        // console.log('ResponseLenght' + response.length );
+                        for (let i = 0; i < response.length; i++) { 
+                            // Loop through all targets of the base artifact to check if the link already exists
+                            // targets not necessarily exist in all links
+                            // console.log('Response' + i, " ", JSON.stringify(response[i]), 'with base target:', baseTargetUri); 
+    
+                            for (let j = 0; j < response[i].targets.length; j++) {
+                                if (!response[i].targets[j] || !response[i].targets[j].uri) {
+                                    // Skip this iteration if targets[j] or targets[j].uri is not defined
+                                    continue;
+                                }
+                                const baseTargetUri = targetUri;
+                                let moduleltUri = 'http://www.ibm.com/xmlns/rdm/types/Embedding';
+                                let moduledir = 'na';
+
+                                let baselt = response[i].linktype;
+                                let basedir = 'na';
+                                
+                                // console.log('TargetsLenght' + response[i].targets.length + 
+                                //     ' Checking link:', response[i].targets[j].uri, 'with base target:', baseTargetUri,
+                                //     'Module LinkType:', moduleltUri, 'Base LinkType:', baselt.uri, 'Module LinkDir:', moduledir, 'Base LinkDir:', basedir); 
+                                // If Base link already exists with same linktype, skip creation
+                                if ( response[i].targets[j].uri === baseTargetUri && baselt.uri === moduleltUri) {
+                                    linkExists = true;
+                                    console.log('Base link already exists, skipping creation:', response[i].targets[j].uri, 'with base target:', baseTargetUri);
+                                    break;
+                                }   
+                            }
+                        }
+                        if (!linkExists) {
+                            // const linktypeDng = new RM.LinkTypeDefinition( linktype.uri, linktype.direction ) ;
+                            console.log('Found unlinked Embed.', textArtifactRef.uri, 'to', targetArtifactRef.uri);
+                            widgetHandler.allLinks.push([textArtifactRef, targetArtifactRef]); // Push Baselinks directly to the list
+                            totalEmbeds++;
+                            // await updateLinkContext(baseStartRef, linktypeDng, baseTargetRef);
+                        }
+                    });
                 }
             }
             resolve(totalEmbeds);
@@ -330,6 +308,30 @@ async function processArtifact(startRefUri, primaryText, componentUri, format, c
         }
     });
 }
+
+// FunctiongetLinksRaw that just returns the links
+function getLinksRaw(artifact) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            await RM.Data.getLinkedArtifacts(artifact, function(response) {
+                if (response && response.code === RM.OperationResult.OPERATION_OK) {
+                    const links = response.data.artifactLinks;
+                    if (!links || links.length === 0) {
+                        resolve([]); // No links found
+                    } else {
+                        resolve(links);
+                    }
+                } else {
+                    reject('Error fetching links. Please check the artifact URI or ensure the context is correct.');
+                }
+            });
+        } catch (error) {
+            console.error('Error in getLinksRaw:', error);
+            reject(error);
+        }
+    });
+}
+
 
 // Function to read links of selected artifacts with await
 async function readArtifact(artifactRef) {
@@ -342,8 +344,10 @@ async function readArtifact(artifactRef) {
                 const format = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
                 // console.log('Format:', format);
                 if (format !== 'Text') {
+                    console.log(format);
                     console.log('Artifact is not a Text artifact. Skipping...');
-                    resolve(null); // Resolve with null to indicate skipping
+                    if (format === 'Module') resolve('Module');
+                    else resolve(null); // Resolve with null to indicate skipping
                 } else {
                     const primaryText = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/PrimaryText"];
                     // console.log('Response:', JSON.stringify(primaryText));
@@ -352,126 +356,6 @@ async function readArtifact(artifactRef) {
             }
         });
     });
-}
-
-// Async function to go through all selected items if they are Modules
-// Get all the artifacts and moduleBinding from the module and call readLinksButton_onclick one by one
-async function readAllModulesButtonOnClick() {
-    let totalModules = 0;
-    let counts = { totalLinks: 0, totalArtifacts: 0, unsuccessfulLinks: 0 };
-    setContainerText("statusContainer", 'Loading...');
-    widgetHandler.availableLinks = [];
-    for (let i = 0; i < widgetHandler.selArtRef.length; i++) {
-        const moduleUri = widgetHandler.selArtRef[i].uri;
-        const componentUri = widgetHandler.selArtRef[i].componentUri;
-        const moduleBinding = await getModuleBinding(moduleUri);
-
-        let artifactRef = [];
-        for (const artifact of moduleBinding) {
-            // console.log('URI:', uri);
-            // if artifact.uri isHeading value is not true and artifact's isStructureRoot is not true
-            if (!artifact.isHeading && !artifact.isStructureRoot) {
-                // Create an ArtifactRef object sub function to enable await
-                const textArtifactRef = await createArtifactRef(artifact.uri, componentUri, moduleUri, 'Text');
-                artifactRef.push(textArtifactRef);
-                console.log('Text Artifact Uri:', JSON.stringify(textArtifactRef.uri));
-            }
-        }
-        const resultCounts = await readLinksButton_onclick(artifactRef, moduleBinding);
-        counts.totalLinks += resultCounts.totalLinks;
-        counts.totalArtifacts += resultCounts.totalArtifacts;
-        counts.unsuccessfulLinks += resultCounts.unsuccessfulLinks;
-        totalModules++;
-    }
-    // Handle pluralization
-    let linkOrLinks = 'links';
-    let artifactOrArtifacts = 'artifacts';
-    let moduleOrModules = 'modules';
-    if ( counts.totalLinks === 1) { linkOrLinks = 'link'; }
-    if ( counts.totalArtifacts === 1) { artifactOrArtifacts = 'artifact'; }
-    if ( totalModules === 1) { moduleOrModules = 'module' };
-    // Display the status message
-    setContainerText("statusContainer", `Searched links for ${totalModules} ${modu}. <br> Created ${counts.totalLinks} new ${linkOrLinks} for ${counts.totalArtifacts} Text ${artifactOrArtifacts} scanned.`);
-    toggleElementVisibility('reloadButton', 'block');
-}
-
-
-// Calling function
-async function readLinksButton_onclick(artifactRef , moduleBinding) {
-    setContainerText("statusContainer", 'Loading...');
-    if (artifactRef.length === 0) { // When clicking the button get [] as artifactRef
-        console.log('Processing selected artifacts.');
-        artifactRef = widgetHandler.selArtRef;
-    }
-
-    if (!artifactRef || artifactRef.length === 0) { // If it is still empty no selection made on module is empty
-        alert('No text artifacts selected.');
-        return;
-    }
-    // counter for successful link creation and unsuccessful link creation
-    let totalLinks = 0;
-    let totalArtifacts = 0;
-    let unsuccessfulLinks = 0;
-    // Get the current server's origin (protocol, hostname, and port)
-    const currentServer = window.location.origin;
-
-    for (let i = 0; i < artifactRef.length; i++) {
-        // console.log('Processing Artifact:', JSON.stringify(artifactRef[i]));
-        try {
-            if (moduleBinding.length === 0 && artifactRef[i].moduleUri) {
-                const moduleUri = artifactRef[i].moduleUri;
-                moduleBinding = await getModuleBinding(moduleUri);
-            }
-            // const artifactsWithEmbeds = [];
-            const primaryText = await readArtifact(artifactRef[i]);
-
-            if (!primaryText) {
-                console.error('Primary text not found.');
-                continue; // Skip to the next artifact
-            }
-
-            const startRef = artifactRef[i]; // This is processed only when selected Artifact contains correct data.
-            let startUri = startRef.uri;
-            // if module binding then get the bound artifact URI
-            if (moduleBinding) { // This is the case when the selected Artifact is not Base artifact.
-                startUri = getBoundArtifactUri(startRef.uri, moduleBinding);
-            }   
-            totalArtifacts++;
-            const embedsProcessed = await processArtifact(startUri, primaryText, startRef.componentUri, "Text", currentServer);
-            totalLinks += embedsProcessed;
-            // Handle pluralization
-            let linkOrLinks = 'links';
-            let artifactOrArtifacts = 'artifacts';
-            if (totalLinks === 1) { linkOrLinks = 'link'; }
-            if (totalArtifacts === 1) { artifactOrArtifacts = 'artifact'; }
-
-            setContainerText("statusContainer", `Created ${totalLinks} ${linkOrLinks} for ${totalArtifacts} ${artifactOrArtifacts} scanned.`);
-        } catch (error) {
-            console.error('Error fetching attributes:', error);
-            unsuccessfulLinks++;
-        }
-    }
-
-    if (totalLinks === 0) {
-        setContainerText("statusContainer", 'No embedded Artifacts without Embeds Link found.');
-    }
-    toggleElementVisibility('reloadButton', 'block');
-    return {totalLinks, totalArtifacts, unsuccessfulLinks};
-}
-
-// Function to read links of selected artifacts
-async function readLinks(artifacts) {
-    for (const artifact of artifacts) {
-        // Get links of the artifact
-        try {
-            const links = await getLinks(artifact);
-            widgetHandler.availableLinks.push(...links);
-        } catch (error) {
-            console.error('Error fetching links:', error);
-            setContainerText("container", 'Error fetching links. Please check the artifact URI or permissions.');
-        }
-    }
-    displayLinkOptions(widgetHandler.availableLinks);  
 }
 
 // Function to update link context
@@ -504,13 +388,6 @@ async function deleteModuleLinks(start, linkType, target) {
     });
 }
 
-// Function to set container text
-function setContainerText(containerId, string) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = string;
-    adjustHeight();
-}
-
 // Function to get module binding
 function getModuleBinding(moduleUri) {
     return new Promise(async (resolve, reject) => {
@@ -525,9 +402,9 @@ function getModuleBinding(moduleUri) {
             });
 
             if (!response.ok) {
-                alert('Item that you are trying to access is not a module.');
-                setContainerText("statusContainer", 'Item that you are trying to access is not a module.');
-                reject(new Error('Failed to fetch module binding. Response status: ' + response.status));
+                setContainerText('moduleStatusContainer','Artifacts and modules selected. Use Selected Items Button to process Text Format artifacts.');
+                setContainerText("statusContainer", '');
+                resolve(new Error('Failed to fetch module binding. Response status: ' + response.status));
             } else {
                 const data = await response.json();
                 resolve(data);
@@ -562,11 +439,291 @@ function getLinks(artifact) {
                 } else {
                 resolve(response.data.artifactLinks.filter(link => link.art.moduleUri != null && link.linktype.direction !== '_OBJ'));
                 }
-
                 // resolve(response.data.artifactLinks);
             } else {
                 reject('Error fetching links. Please check the artifact URI or ensure the context is correct.');
             }
         });
     });
+}
+
+// Function with Promise to create missing links
+async function createEmdedsLink(baseStartRef, embeddedArtRef) {
+    return new Promise((resolve, reject) => {
+        RM.Data.createLink(baseStartRef, RM.Data.LinkTypes.EMBEDS, embeddedArtRef, function(response) {
+            if (response.code !== RM.OperationResult.OPERATION_OK) {
+                console.error('Error creating link:', response);
+                reject(response);
+            } else {
+                console.log('Successfully created link between:', baseStartRef, 'and', embeddedArtRef);
+                resolve(1);
+            }
+        });
+    });
+}
+
+function updateStatusAndButtons(counts) {
+    toggleElementVisibility('stopRunContainer', 'none');
+    console.log('Total Links:', counts.totalLinks, 'Total Artifacts:', counts.totalArtifacts, 'Total Modules:', counts.totalModules);
+    // Handle pluralization
+    let linkOrLinks = 'links';
+    let artifactOrArtifacts = 'artifacts';
+    let moduleOrModules = 'modules';
+    let moduleInfo = '';
+    if (counts.totalLinks === 1) { linkOrLinks = 'link'; }
+    if (counts.totalArtifacts === 1) { artifactOrArtifacts = 'artifact'; }
+    if (counts.totalModules === 1) { moduleOrModules = 'module'; }
+    if (counts.totalModules !== 0) { moduleInfo = ` in ${counts.totalModules} ${moduleOrModules} `; }
+
+    setContainerText("statusContainer", `Found ${counts.totalLinks} ${linkOrLinks} for ${counts.totalArtifacts} ${artifactOrArtifacts} scanned${moduleInfo}.`);
+    if ( counts.totalLinks !== 0) {
+        setContainerText("moduleStatusContainer", `Click Create Links Button to create missing links.`);
+        toggleElementVisibility('createLinksContainer', 'block');
+    } else {
+        setContainerText("moduleStatusContainer", ``);
+        toggleElementVisibility('createLinksContainer', 'none');
+    }
+
+}
+
+// This is the Main Funtion !!!
+function readAllLinks(artifactRef, moduleBinding) {
+    toggleElementVisibility('stopRunContainer', 'block');
+    toggleElementVisibility('createLinksContainer', 'none');
+    run = true;
+    return new Promise(async (resolve, reject) => {
+        try {
+            // setContainerText("statusContainer", 'Loading...');
+            // counter for successful link creation and unsuccessful link creation
+            let totalLinks = 0;
+            let totalArtifacts = 0;
+            // let totalModules = 0;
+            let mixedList = '';
+            // Get the current server's origin (protocol, hostname, and port)
+            const currentServer = window.location.origin;
+
+            for (let i = 0; i < artifactRef.length; i++) {
+                if (!run) {
+                    setContainerText("moduleStatusContainer", 'Stopped.');
+                    break;
+                }
+                // console.log('Processing Artifact:', JSON.stringify(artifactRef[i]));
+                try {
+                    if (moduleBinding.length === 0 && artifactRef[i].moduleUri) {
+                        const moduleUri = artifactRef[i].moduleUri;
+                        moduleBinding = await getModuleBinding(moduleUri);
+                    }
+                    // const artifactsWithEmbeds = [];
+                    const primaryText = await readArtifact(artifactRef[i]);
+                    console.log('Primary Text:', primaryText, primaryText == 'Module' );
+                    if ( primaryText == 'Module' ) {
+                        mixedList = 'You have modules mixed in artifact selection';
+                        alert(`You have modules mixed in artifact selection. Please select artifacts or Use Selected Modules Button.`);
+                        totalArtifacts++;
+                        continue;
+                    }
+
+                    if (!primaryText) {
+                        console.log('Primary text not found.');
+                        totalArtifacts++;
+                        let linkOrLinks = 'links';
+                        let artifactOrArtifacts = 'artifacts';
+                        if (totalLinks === 1) { linkOrLinks = 'link'; }
+                        if (totalArtifacts === 1) { artifactOrArtifacts = 'artifact'; }
+                        setContainerText("statusContainer", `Found ${totalLinks} missing ${linkOrLinks} for ${totalArtifacts} ${artifactOrArtifacts} scanned. ${mixedList}`);
+                        continue; // Skip to the next artifact
+                    }
+
+                    const startRef = artifactRef[i]; // This is processed only when selected Artifact contains correct data.
+                    let baseStartUri = startRef.uri;
+                    // if module binding then get the bound artifact URI
+                    if (moduleBinding) { // This is the case when the selected Artifact is not Base artifact.
+                        baseStartUri = getBoundArtifactUri(baseStartUri, moduleBinding);
+                    }   
+                    totalArtifacts++;
+                    const embedsProcessed = await analyzeArtifact(baseStartUri, primaryText, startRef.componentUri, "Text", currentServer);
+                    totalLinks += embedsProcessed;
+                    // Handle pluralization
+                    let linkOrLinks = 'links';
+                    let artifactOrArtifacts = 'artifacts';
+                    if (totalLinks === 1) { linkOrLinks = 'link'; }
+                    if (totalArtifacts === 1) { artifactOrArtifacts = 'artifact'; }
+
+                    setContainerText("statusContainer", `Found ${totalLinks} ${linkOrLinks} for ${totalArtifacts} ${artifactOrArtifacts} scanned. ${mixedList}`);
+                } catch (error) {
+                    console.error('Error fetching attributes:', error);
+                    // totalModules++;
+                }
+            }
+            toggleElementVisibility('stopRunContainer', 'none');
+            resolve({ totalLinks, totalArtifacts });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+// Function to get Module Binding ie. List of artifacts in the module
+async function readWholeModule() {
+    let counts = { totalLinks: 0, totalArtifacts: 0, totalModules: 0 };
+    toggleElementVisibility('createLinksContainer', 'none');
+    // let totalModules = 0;
+    const browserURLtop = window.parent.location.href;// Get the current browser URL
+    if ( browserURLtop.includes('showArtifactPage' )) {
+        RM.Client.getCurrentArtifact(async function(res) {
+            if (res.code !== RM.OperationResult.OPERATION_OK) {
+                console.log('Error:', res);
+                return;
+            }
+            const jsonObject = res;
+            // console.log('Response:', JSON.stringify(jsonObject));
+            
+
+            // Extract the format information
+            const format = jsonObject.data?.ref?.format;
+            const artifactFormat = jsonObject.data?.values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
+            
+            // Check if it is of type "Module"
+            if (format && format.endsWith("#Module") && artifactFormat === "Module" && browserURLtop.includes('showArtifactPage')) {
+                console.log("This is a type of Module.");
+            } else {
+                alert("You are not in a Module View.");
+                return;
+            }
+            console.log('Module URI:', jsonObject.data?.ref?.uri);
+            const moduleUri = jsonObject.data?.ref?.uri;
+            const moduleBinding = await getModuleBinding(moduleUri);
+            // console.log('Module Binding:', JSON.stringify(moduleBinding));
+            const componentUri = jsonObject.data?.ref?.componentUri;          
+            // Create Artifact Ref for each artifact in the module so that their PRIMARY_TEXT can be read 
+            let artifactRef = [];
+            for (const artifact of moduleBinding) {
+                // console.log('URI:', uri);
+                // if artifact.uri isHeading value is not true and artifact's isStructureRoot is not true
+                if (!artifact.isHeading && !artifact.isStructureRoot) {
+                    // Create an ArtifactRef object sub function to enable await
+                    const textArtifactRef = await createArtifactRef(artifact.uri, componentUri, moduleUri, 'Text');
+                    artifactRef.push(textArtifactRef);
+                    // console.log('Text Artifact Uri:', JSON.stringify(textArtifactRef.uri));
+                } else if (artifact.isHeading) {
+                    counts.totalArtifacts++; // Increment the total artifacts count for Headings
+                }
+            }
+            // console.log('Text Artifact Array:', JSON.stringify(artifactRef)); 
+            const resultCounts = await readAllLinks(artifactRef, moduleBinding);
+            counts.totalLinks += resultCounts.totalLinks;
+            counts.totalArtifacts += resultCounts.totalArtifacts;
+            counts.totalModules++;
+
+            updateStatusAndButtons(counts);
+        });
+    } else {
+        alert('Open a Module to use this feature.');
+    }
+}
+
+async function readSelectedLinksOnClick() {
+    setContainerText("moduleStatusContainer", '');
+    let counts = { totalLinks: 0, totalArtifacts: 0, totalModules: 0 };
+    // Check that there are objects in the artifactRef
+    if (widgetHandler.selArtRef === 0) { // When clicking the button get [] as artifactRef
+        // console.log('Processing selected artifacts.');
+        alert('No artifacts selected. Select Artifacts from Module or Project View.');
+        return;
+    } 
+    // Read links of the array of selected artifacts
+    const resultCounts = await readAllLinks(widgetHandler.selArtRef, []);
+    counts.totalLinks += resultCounts.totalLinks;
+    counts.totalArtifacts += resultCounts.totalArtifacts;
+    updateStatusAndButtons(counts);
+}
+
+async function readAllModulesButtonOnClick() {
+    let counts = { totalLinks: 0, totalArtifacts: 0, totalModules: 0 };
+
+    // Check that we are in Module listing view
+    if (!widgetHandler.selArtRef || widgetHandler.selArtRef.length === 0) { 
+        setContainerText("statusContainer", 'No Modules selected. Select Modules in Module listing View.');
+        return;
+    }
+
+    setContainerText("moduleStatusContainer", 'Processing Modules...');
+    // toggleElementVisibility('stopRunContainer', 'block');
+    // run = true;
+    // Loop through all selected modules
+    for (let i = 0; i < widgetHandler.selArtRef.length; i++) {
+        setContainerText("moduleStatusContainer", `Processing Module ${i + 1} of ${widgetHandler.selArtRef.length}.`);
+        const moduleUri = widgetHandler.selArtRef[i].uri;
+        const componentUri = widgetHandler.selArtRef[i].componentUri;
+        const moduleBinding = await getModuleBinding(moduleUri);
+
+        let artifactRef = [];
+        // Loop through all artifacts in the module
+        for (const artifact of moduleBinding) {
+            // console.log('URI:', uri);
+            // if artifact.uri isHeading value is not true and artifact's isStructureRoot is not true
+            if (!artifact.isHeading && !artifact.isStructureRoot) {
+                // Create an ArtifactRef object sub function to enable await
+                const textArtifactRef = await createArtifactRef(artifact.uri, componentUri, moduleUri, 'Text');
+                artifactRef.push(textArtifactRef);
+                // Create one list for all item having embedded items
+            } else if (artifact.isHeading) {
+                counts.totalArtifacts++; // Increment the total artifacts count for Headings
+            }
+        }
+        const resultCounts = await readAllLinks(artifactRef, moduleBinding);
+        counts.totalLinks += resultCounts.totalLinks;
+        counts.totalArtifacts += resultCounts.totalArtifacts;
+        counts.totalModules++;
+    }
+
+    updateStatusAndButtons(counts);
+}
+
+// Function to create missing links
+async function createLinksOnClick() {
+    // Check if there are any links to create
+    toggleElementVisibility('createLinksContainer', 'none');
+    toggleElementVisibility('stopRunContainer', 'block');
+    setContainerText("moduleStatusContainer", `Note: Stop won't undo links already created`);
+    if (widgetHandler.allLinks.length === 0) {
+        alert('No missing links found. Run the analysis first.');
+        return;
+    }
+    // console.log('All Links:', JSON.stringify(widgetHandler.allLinks));
+    setContainerText("statusContainer", 'Creating links...');
+    let totalLinks = 0;
+    let totalModules = 0;
+    for (let i = 0; i < widgetHandler.allLinks.length; i++) {
+        if (!run) {
+            setContainerText("moduleStatusContainer", 'Stopped.');
+            break;
+        }
+        setContainerText("statusContainer", `Creating links... ${i + 1} of ${widgetHandler.allLinks.length}.`);
+        console.log('Processing Artifact:', JSON.stringify(widgetHandler.allLinks[i]));
+        try {
+            const baseStartRef = widgetHandler.allLinks[i][0];
+            const embeddedArtRef = widgetHandler.allLinks[i][1];
+            const embedsProcessed = await createEmdedsLink(baseStartRef, embeddedArtRef);
+            totalLinks += embedsProcessed;
+            // Handle pluralization
+            let linkOrLinks = 'links';
+            if (totalLinks === 1) { linkOrLinks = 'link'; }
+            setContainerText("statusContainer", `Created ${totalLinks} ${linkOrLinks}.`);
+        } catch (error) {
+            console.error('Error fetching attributes:', error);
+            totalModules++;
+        }
+    }
+    // if (totalLinks === 0) {
+    //     setContainerText("statusContainer", 'No embedded Artifacts without Embeds Link found.');
+    // }
+    // Handle pluralization
+    let linkOrLinks = 'links';
+    if (totalLinks === 1) { linkOrLinks = 'link'; }
+    setContainerText("statusContainer", `Created ${totalLinks} ${linkOrLinks}.`);
+    setContainerText("moduleStatusContainer", '');
+    toggleElementVisibility('reloadContainer', 'block');
+    toggleElementVisibility('stopRunContainer', 'none');
+    toggleElementVisibility('createLinksContainer', 'none');
 }

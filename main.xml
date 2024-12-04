@@ -27,7 +27,6 @@
                 <!-- Custom JS-code -->
 				<script type="text/javascript" src="./js/main_elc.js" charset="utf-8"></script> 
 
-
                 <style>
                     #container::-webkit-scrollbar {
                         -webkit-appearance: none;
@@ -70,20 +69,20 @@
 					<table style='margin-top: 5px; border: 0'>
 						<tr>
 							<td style='text-align: center; font-size:12px;'><a onclick='show_instructions();' style='color:#00F; text-decoration: underline;' id='instructions_button'><span id='str001'></span></a></td>
-							<td style='text-align: center; font-size:12px;'><a onclick='show_settings();' style='color:#00F; text-decoration: underline;' id='settings_button'><span id='str002'></span></a></td>
+							<td style='text-align: center; font-size:12px; display: none;'><a onclick='show_settings();' style='color:#00F; text-decoration: underline;' id='settings_button'><span id='str002'></span></a></td>
 						</tr>
 					</table>
 
 					<hr style='padding: 0 !important; margin: 0 !important;'/>
 
 					<div style="font-size:12px; display: none;" id='instructions_div'>
-						<b><span id='str003'></span> </b> <span id='str004b'>This widget creates Embeds type links for Text artifacts that contain embedded images and other objects.</span> <br/>
+						<b><span id='str003'></span> </b>  <br/>
 						<ol>
-							<li> <span id='str005a'>Open the module or select Artifacts from list view.</span> </li>
-							<li> <span id='str006b'>Select operation. <li> - Whole Module button scans the whole module and creates Base Link links for all Embedded artifacts.</li><li> - Selected Modules process all Selected modules (can be long process). </li><li> Selected Items button works in all list views.</li></span> </li>
-							<li> <span id='str007a'>Click Reload to see newly created Base Links.</span></li>
+							<li> <span id='str004b'></span> </li>	
+							<li> <span id='str005a'></span> </li>
+							<li> <span id='str006a'></span> </li>
 						</ol>
-
+						<span id='str007a'></span>
 						<hr style='padding: 0 !important; margin: 0 !important;'/>
 					</div>
 					
@@ -91,24 +90,33 @@
 					 This Widget has no settings.
 					</div>
 
-				<!-- Div for the form with links -->
+				<!-- Div for the Buttons links -->
 				<div class="bx--grid" style="padding-right:0; padding-left:0">
                     <div class="bx--col custom-row">
 						<div class="bx--form-item">
 						<p class="bx--form__helper-text"><Strong>Create links for Embedded Artifacts for:</Strong> </p>
-						<button id="getModule" class="bx--btn bx--btn--primary bx--btn--md" style="width:100%;max-width:none;" onclick="getModule()">Whole Module</button>
+						<button id="getModule" class="bx--btn bx--btn--primary bx--btn--md" style="width:100%;max-width:none;" onclick="readWholeModule()">Whole Module</button>
 						 </div>
 					</div>
 					<div class="bx--col custom-row">
-						<button class="bx--btn bx--btn--default bx--btn--md" style="width:100%;max-width:none;" id="readAllModulesButtonOnClick" onclick="readAllModulesButtonOnClick([],[])">Selected Modules</button>
+						<button class="bx--btn bx--btn--default bx--btn--md" style="width:100%;max-width:none;" id="readLinksButton" onclick="readSelectedLinksOnClick()">Selected Items</button>						
 					</div>
 					<div class="bx--col custom-row">
-						<button class="bx--btn bx--btn--default bx--btn--md" style="width:100%;max-width:none;" id="readLinksButton" onclick="readLinksButton_onclick([],[])">Selected Items</button>						
+						<button class="bx--btn bx--btn--default bx--btn--md" style="width:100%;max-width:none;" id="readAllModulesButtonOnClick" onclick="readAllModulesButtonOnClick()">Selected Modules</button>
 					</div>
+
 					<div class="bx--col custom-row bx--form__helper-text" id="statusContainer">
 					</div>
-					<div class="bx--col custom-row" id="reloadContainer">
-						<button class="bx--btn bx--btn--primary bx--btn--md" style="width:100%;max-width:none;display: none;" id="reloadButton" onclick="window.top.location.reload()">Reload Page</button>
+					<div class="bx--col custom-row bx--form__helper-text" id="moduleStatusContainer">
+					</div>
+					<div class="bx--col custom-row" id="reloadContainer" style="display: none;">
+						<button class="bx--btn bx--btn--primary bx--btn--md" style="width:100%;max-width:none;" id="reloadButton" onclick="clickRefreshButton()">Reload Page</button>
+					</div>
+					<div class="bx--col custom-row" id="stopRunContainer" style="display: none;">
+						<button class="bx--btn bx--btn--danger bx--btn--md" style="width:100%;max-width:none;" onclick="stopRun()">Stop</button>
+					</div>
+					<div class="bx--col custom-row" id="createLinksContainer" style="display: none;">
+						<button class="bx--btn bx--btn--primary bx--btn--md" style="width:100%;max-width:none;" id="createLinksButton" onclick="createLinksOnClick()">Create Links</button>
 					</div>
 				
 				</div>

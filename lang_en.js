@@ -13,20 +13,20 @@ lang_json = `{
       "text": "How to use this widget?"
     },
     {
-      "id": "str004b",
-      "text": "This widget creates Embeds type links for Text artifacts that contain embedded images and other objects."
+      "id": "str004a",
+      "text": "1. Choose either selected artifacts in a module or the whole module"
     },
     {
       "id": "str005a",
-      "text": "Open the module or select Artifacts from list view."
+      "text": "2. Or Choose Selected Modules in Module listing View to process all of them"
     },
     {
-      "id": "str006b",
-      "text": "Select operation."
+      "id": "str006a",
+      "text": "3. Click Reload to see newly created Embeds Links."
     },
     {
-      "id": "str007a",
-      "text": "Click Reload to see newly created Base Links."
+      "id": "str007b",
+      "text": "This widget creates Embeds type links for Text artifacts that contain embedded images and other objects."
     },
     {
       "id": "str008",
