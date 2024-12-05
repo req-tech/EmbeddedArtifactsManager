@@ -20,11 +20,13 @@ function stopRun() {
 // Function to handle artifact selection event
 function onSelection(artifacts) {
     widgetHandler.selArtRef = artifacts || [];
+    widgetHandler.allLinks = [];
 }
 
 function onOpen(artifact) {
     // alert('Artifact Opened');
     widgetHandler.selArtRef = [];
+    widgetHandler.allLinks = [];
 }
 
 // Function to adjust the window height
@@ -47,6 +49,7 @@ function clickRefreshButton() {
     setContainerText("statusContainer", '');
     setContainerText("moduleStatusContainer", '');
     widgetHandler.selArtRef = [];
+    widgetHandler.allLinks = [];
 }
 
 // display the instructions on/off
@@ -239,6 +242,7 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
     // console.log('baseStartRefUri:', JSON.stringify(baseStartRefUri));
     return new Promise(async (resolve, reject) => {
         try {
+            console.log('Analyzing:', primaryText);
             let totalEmbeds = 0;
             // Create a URL pattern to match URLs in the text that can be Wrapped Artifacts
             const urlPattern = /https?:\/\/[^\s"'>]+/g;
@@ -247,28 +251,31 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
             // Check if the urls is not empty
             if (urls) {
                 // Filter URLs to only include those from the same server and containing 'rm/wrappedResources'
-                const filteredUrls = urls.filter(url => url.startsWith(currentServer) && url.toLowerCase().includes('rm/wrappedresources'));
-                // console.log('Found Wrapped items: ', filteredUrls.length);
-                // Loop through the filtered URLs
+                const filteredUrls = urls.filter(url => url.startsWith(currentServer) && (url.toLowerCase().includes('rm/wrappedresources') || url.toLowerCase().includes('rm/resources')));
+                console.log('Found Wrapped items: ', filteredUrls.length);
+                // Loop through the filtered wrapped URLs
                 for (let j = 0; j < filteredUrls.length; j++) {
                     // Get the URI of the wrapped item
-                    const wrArtifactUri = filteredUrls[j].split('?')[0];
-                    const targetUri = wrArtifactUri.replace('wrappedResources', 'resources');
+                    const embeddedArtifactUri = filteredUrls[j].split('?')[0];
+                    let targetUri = embeddedArtifactUri;
+                    let targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, format);
+                    // if the URL contains 'wrappedResources' replace it with 'resources'
+                    if (embeddedArtifactUri.includes('wrappedResources')) {
+                        targetUri = embeddedArtifactUri.replace('wrappedResources', 'resources');
+                        targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, 'WrapperResource');
+                    }
+                    // const targetUri = embeddedArtifactUri.replace('wrappedResources', 'resources');
+                    // targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, 'WrapperResource');
                     // console.log('Wrapped Artifact URI:', targetUri);
                     // Create a new ArtifactRef object    
                     const textArtifactRef = new RM.ArtifactRef(baseStartRefUri, componentUri, null, format);
                     // console.log('Text Artifact Ref:', JSON.stringify(textArtifactRef));
-                    const targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, 'WrapperResource');
                     // console.log('Wrapped Artifact Ref:', JSON.stringify(targetArtifactRef));
                     // Check if the link already exists
                     await getLinksRaw(textArtifactRef).then(async (response) => {
                         let linkExists = false;
                         // console.log('ResponseLenght' + response.length );
                         for (let i = 0; i < response.length; i++) { 
-                            // Loop through all targets of the base artifact to check if the link already exists
-                            // targets not necessarily exist in all links
-                            // console.log('Response' + i, " ", JSON.stringify(response[i]), 'with base target:', baseTargetUri); 
-    
                             for (let j = 0; j < response[i].targets.length; j++) {
                                 if (!response[i].targets[j] || !response[i].targets[j].uri) {
                                     // Skip this iteration if targets[j] or targets[j].uri is not defined
@@ -276,15 +283,8 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
                                 }
                                 const baseTargetUri = targetUri;
                                 let moduleltUri = 'http://www.ibm.com/xmlns/rdm/types/Embedding';
-                                let moduledir = 'na';
-
                                 let baselt = response[i].linktype;
-                                let basedir = 'na';
-                                
-                                // console.log('TargetsLenght' + response[i].targets.length + 
-                                //     ' Checking link:', response[i].targets[j].uri, 'with base target:', baseTargetUri,
-                                //     'Module LinkType:', moduleltUri, 'Base LinkType:', baselt.uri, 'Module LinkDir:', moduledir, 'Base LinkDir:', basedir); 
-                                // If Base link already exists with same linktype, skip creation
+
                                 if ( response[i].targets[j].uri === baseTargetUri && baselt.uri === moduleltUri) {
                                     linkExists = true;
                                     console.log('Base link already exists, skipping creation:', response[i].targets[j].uri, 'with base target:', baseTargetUri);
