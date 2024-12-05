@@ -242,7 +242,6 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
     // console.log('baseStartRefUri:', JSON.stringify(baseStartRefUri));
     return new Promise(async (resolve, reject) => {
         try {
-            console.log('Analyzing:', primaryText);
             let totalEmbeds = 0;
             // Create a URL pattern to match URLs in the text that can be Wrapped Artifacts
             const urlPattern = /https?:\/\/[^\s"'>]+/g;
@@ -264,14 +263,9 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
                         targetUri = embeddedArtifactUri.replace('wrappedResources', 'resources');
                         targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, 'WrapperResource');
                     }
-                    // const targetUri = embeddedArtifactUri.replace('wrappedResources', 'resources');
-                    // targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, 'WrapperResource');
-                    // console.log('Wrapped Artifact URI:', targetUri);
                     // Create a new ArtifactRef object    
                     const textArtifactRef = new RM.ArtifactRef(baseStartRefUri, componentUri, null, format);
-                    // console.log('Text Artifact Ref:', JSON.stringify(textArtifactRef));
-                    // console.log('Wrapped Artifact Ref:', JSON.stringify(targetArtifactRef));
-                    // Check if the link already exists
+
                     await getLinksRaw(textArtifactRef).then(async (response) => {
                         let linkExists = false;
                         // console.log('ResponseLenght' + response.length );
@@ -297,7 +291,6 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
                             console.log('Found unlinked Embed.', textArtifactRef.uri, 'to', targetArtifactRef.uri);
                             widgetHandler.allLinks.push([textArtifactRef, targetArtifactRef]); // Push Baselinks directly to the list
                             totalEmbeds++;
-                            // await updateLinkContext(baseStartRef, linktypeDng, baseTargetRef);
                         }
                     });
                 }
@@ -309,7 +302,7 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
     });
 }
 
-// FunctiongetLinksRaw that just returns the links
+// Function getLinksRaw that just returns the links
 function getLinksRaw(artifact) {
     return new Promise(async (resolve, reject) => {
         try {
@@ -432,14 +425,12 @@ function getLinks(artifact) {
         RM.Data.getLinkedArtifacts(artifact, function(response) {
             if (response && response.code === RM.OperationResult.OPERATION_OK) {
                 // if response.data.artifactLinks.length is defined
-                // console.log('Response:', JSON.stringify(response));
                 if (response.data.artifactLinks.length === 0) {
                     // console.log('No links found for artifact:');
                     resolve([]);
                 } else {
                 resolve(response.data.artifactLinks.filter(link => link.art.moduleUri != null && link.linktype.direction !== '_OBJ'));
                 }
-                // resolve(response.data.artifactLinks);
             } else {
                 reject('Error fetching links. Please check the artifact URI or ensure the context is correct.');
             }
@@ -497,7 +488,6 @@ function readAllLinks(artifactRef, moduleBinding) {
             // counter for successful link creation and unsuccessful link creation
             let totalLinks = 0;
             let totalArtifacts = 0;
-            // let totalModules = 0;
             let mixedList = '';
             // Get the current server's origin (protocol, hostname, and port)
             const currentServer = window.location.origin;
