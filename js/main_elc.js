@@ -65,6 +65,7 @@ function show_instructions() {
 // display the instructions on/off
 function show_settings() {
     // instructions is not visible toggle on, if visible toggle off
+    // alert(document);
     if (document.getElementById("settings_div").style.display === "none") {
         toggleElementVisibility('settings_div', 'block');
     } else {
