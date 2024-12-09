@@ -37,6 +37,7 @@ function adjustHeight() {
 // Function to execute when body loads
 function onBodyLoad() {
     loadLanguage(); // Load the text according to the language file set in main.xml
+    // alert(RM.Data.Formats.WRAPPED);
     adjustHeight();
 }
 
@@ -49,6 +50,17 @@ function clickRefreshButton() {
     setContainerText("statusContainer", '');
     setContainerText("moduleStatusContainer", '');
     widgetHandler.selArtRef = [];
+    widgetHandler.allLinks = [];
+}
+
+// Function to programmatically click the right panel Refresh button
+function initWidget() {
+    // Select the button using its Title attribute
+    toggleElementVisibility('reloadContainer', 'none');
+    toggleElementVisibility('stopRunContainer', 'none');
+    setContainerText("statusContainer", '');
+    setContainerText("moduleStatusContainer", '');
+    // widgetHandler.selArtRef = [];
     widgetHandler.allLinks = [];
 }
 
@@ -105,128 +117,7 @@ function setContainerText(containerId, string) {
     adjustHeight();
 }
 
-// Function for Dev actions, not in use now
-async function devActions() {
-    // console.log('Dev actions');
-    // console.log('Artifact:', JSON.stringify(widgetHandler.selArtRef[0]));
-    const responseData = await getAllArtifactsFromProject();
-    // Loop through the results
-    // console.log('Results:', responseData);
-    // Iterate over each key-value pair in the response
-    // for (const [key, value] of Object.entries(results)) {
-    //     // Get the type information
-    //     console.log('Key:', key);
-    //     const typeInfo = value["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"];
-        
-    //     // Check if the type is "Requirement"
-    //     if (typeInfo && Array.isArray(typeInfo)) {
-    //         const isRequirement = typeInfo.some(
-    //             item => item.value === "http://open-services.net/ns/rm#Requirement"
-    //         );
-    //         if (isRequirement) {
-    //             console.log(`Requirement found: ${key}`);
-    //         }
-    //     }
-    // }
-    for (const key in responseData) {
-        // console.log('Keyyy:', key);
-        if (responseData.hasOwnProperty(key)) {
-            const typeInfo = responseData[key]["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"];
-            
-            // Check if the type matches "Requirement"
-            if (typeInfo && Array.isArray(typeInfo)) {
-                const isRequirement = typeInfo.some(
-                    item => item.value === "http://open-services.net/ns/rm#Requirement"
-                );
-                if (isRequirement) {
-                    console.log(`Requirement found: ${key}`);
-                }
-            }
-        }
-    }
-}
-
-// Function to get all artifacts from the entire project using OSLC
-async function getAllArtifactsFromProject() {
-    const projectUri = widgetHandler.selArtRef[0].componentUri;
-    const projectUriParts = projectUri.split('/');
-    const projectId = projectUriParts[projectUriParts.length - 1];
-    const compUri = '_NO35cEqNEe-lXMAnwStbdQ'; //widgetHandler.selArtRef[0].componentUri;
-    const project = '_Mks7EEqNEe-lXMAnwStbdQ';
-    // console.log('Artifact:', JSON.stringify(widgetHandler.selArtRef[0]));
-
-    try {
-        // Get the current browser top level URL 
-        const browserURLtop = window.parent.location.href;// Get the current browser URL
-        const browserURL = window.location.href; // Get the current browser URL
-        // console.log('Browser parent URL:', browserURLtop);
-        const urlParts = browserURLtop.split('&');
-        let componentUriOslc = '';
-        if (urlParts[0].includes('showProjectDashboard')) {
-            componentUriOslc = urlParts[1];
-            console.log('Component OSLC:', componentUriOslc);
-        }
-        const url = new URL(browserURL);
-        const baseUrl = `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}/rm`;
-
-        console.log('Project ID:', projectId, 'Base URL:', baseUrl);
-        console.log('componentUri:', widgetHandler.selArtRef[0].componentUri);
-
-        // Construct the query URL
-        const oslcQuery = "oslc.query=true";
-        const projectURL = `projectURL=${encodeURIComponent(`${baseUrl}/process/project-areas/${projectId}`)}`;
-        const componentUriEncoded = `componentURI=${encodeURIComponent(`https://clm.celeris.se/rm/rm-projects/${project}/components/${compUri}`)}`;
-        // const componentUriEncoded = `componentURI=${encodeURIComponent(`https://clm.celeris.se/rm/rm-projects/${compUri}/components/${compUri}`)};
-        const vvc = `&vvc.configuration=${encodeURIComponent(`https://clm.celeris.se/rm/cm/stream/${compUri}`)}`;
-        //  const vvc = `&vvc.configuration=${encodeURIComponent(`https://clm.celeris.se/rm/cm/stream/${compUri}`)}`;
-        const oslcPrefix = encodeURIComponent("oslc.prefix=dcterms=<http://purl.org/dc/terms/>,rm_nav=<http://jazz.net/ns/rm/navigation#>");
-        const oslcWhere = encodeURIComponent('oslc.where=dcterms:identifier=534');
-        // const oslcWhere = encodeURIComponent('oslc.where=dcterms:modified>"2020-08-01T21:51:40.979Z"^^xsd:datetime');
-        const oslcSelect = encodeURIComponent("oslc.select=dcterms:identifier,dcterms:title");
-        // const oslcPaging = encodeURIComponent("oslc.paging=true");
-        // const oslcPageSize = encodeURIComponent("oslc.pageSize=200");
-        const oslcPaging = "oslc.paging=true";
-        const oslcPageSize = "oslc.pageSize=200";
-
-        // let queryUrl = `${baseUrl}/views?${oslcQuery}&${componentUriEncoded}${vvc}&${oslcPrefix}&${oslcWhere}&${oslcSelect}&${oslcPaging}&${oslcPageSize}`;
-        let queryUrl = `${baseUrl}/views?${oslcQuery}&${componentUriOslc}&${oslcPrefix}&${oslcWhere}&${oslcSelect}&${oslcPaging}&${oslcPageSize}`;
-        // let queryUrl = `${baseUrl}/views?${oslcQuery}&${projectURL}&${oslcPrefix}&${oslcWhere}&${oslcSelect}&${oslcPaging}&${oslcPageSize}`;
-        console.log('Query URL:', queryUrl);
-        // queryUrl = 'https://homie.byte.fi:9443/rm/views?oslc.query=true&projectURL=https%3A%2F%2Fhomie.byte.fi%3A9443%2Frm%2Fprocess%2Fproject-areas%2F_22yKMJFmEe-Oy5UELFqR4Q&oslc.prefix=dcterms%3D%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2F%3E%2Crm_nav%3D%3Chttp%3A%2F%2Fjazz.net%2Fns%2Frm%2Fnavigation%23%3E&oslc.where=dcterms%3Amodified%3E%222020-08-01T21%3A51%3A40.979Z%22%5E%5Exsd%3Adatetime&oslc.select=dcterms%3Aidentifier%2Crm_nav%3Aparent&oslc.paging=true&oslc.pageSize=200';
-        // alert('Curl  URL:' + queryUrl);
-
-        // Perform the GET request
-        const response = await fetch(queryUrl, {
-            method: 'GET',
-            headers: {
-                // 'Accept': 'application/rdf+xml',
-                'Accept': 'application/json',
-                'OSLC-Core-Version': '3.0' // Update to the version used in the curl command
-            },
-            credentials: 'include' // Ensures cookies are sent along with the request
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Response Error:', errorText);
-            throw new Error(`Failed to fetch artifacts: ${response.status} ${response.statusText}`);
-        }
-
-        const responseData = await response.text();
-
-        return responseData;
-    } catch (error) {
-        console.error('Error while fetching project artifacts:', error);
-        return [];
-    }
-}
-
-// Placeholder function for parsing artifacts from RDF/XML
-function parseArtifactsFromRDF(rdfData) {
-    // Implement the parsing logic here to extract artifact references from RDF/XML response
-    return [];
-}
-
+// Function to create an ArtifactRef object
 function createArtifactRef(uri, componentUri, moduleUri, format) {
     return new Promise((resolve, reject) => {
         try {
@@ -251,7 +142,7 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
             // Check if the urls is not empty
             if (urls) {
                 // Filter URLs to only include those from the same server and containing 'rm/wrappedResources'
-                const filteredUrls = urls.filter(url => url.startsWith(currentServer) && (url.toLowerCase().includes('rm/wrappedresources') || url.toLowerCase().includes('rm/resources')));
+                const filteredUrls = urls.filter(url => url.startsWith(currentServer) && (url.toLowerCase().includes('/wrappedresources') || url.toLowerCase().includes('/resources')));
                 console.log('Found Wrapped items: ', filteredUrls.length);
                 // Loop through the filtered wrapped URLs
                 for (let j = 0; j < filteredUrls.length; j++) {
@@ -262,7 +153,7 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
                     // if the URL contains 'wrappedResources' replace it with 'resources'
                     if (embeddedArtifactUri.includes('wrappedResources')) {
                         targetUri = embeddedArtifactUri.replace('wrappedResources', 'resources');
-                        targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, 'WrapperResource');
+                        targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, RM.Data.Formats.WRAPPED);
                     }
                     // Create a new ArtifactRef object    
                     const textArtifactRef = new RM.ArtifactRef(baseStartRefUri, componentUri, null, format);
@@ -277,7 +168,7 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
                                     continue;
                                 }
                                 const baseTargetUri = targetUri;
-                                let moduleltUri = 'http://www.ibm.com/xmlns/rdm/types/Embedding';
+                                let moduleltUri = RM.Data.LinkTypes.EMBEDS.uri; // Default value 'http://www.ibm.com/xmlns/rdm/types/Embedding'
                                 let baselt = response[i].linktype;
 
                                 if ( response[i].targets[j].uri === baseTargetUri && baselt.uri === moduleltUri) {
@@ -335,15 +226,16 @@ async function readArtifact(artifactRef) {
                 reportError(res);
                 reject(res);
             } else {
-                const format = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
+                // console.log('Artifact:', JSON.stringify(res));
+                const format = res.data[0].values[RM.Data.Attributes.FORMAT];
                 // console.log('Format:', format);
                 if (format !== 'Text') {
-                    console.log(format);
-                    console.log('Artifact is not a Text artifact. Skipping...');
-                    if (format === 'Module') resolve('Module');
+                    console.log(format + ' Artifact is not a Text artifact. Skipping...');
+                    if ( format === RM.Data.Formats.MODULE ) resolve('Module');
+                    else if (format == undefined) console.log('Format is undefined: ' + JSON.stringify(res.data[0]));
                     else resolve(null); // Resolve with null to indicate skipping
                 } else {
-                    const primaryText = res.data[0].values["http://www.ibm.com/xmlns/rdm/types/PrimaryText"];
+                    const primaryText = res.data[0].values[RM.Data.Attributes.PRIMARY_TEXT];
                     // console.log('Response:', JSON.stringify(primaryText));
                     resolve(primaryText);
                 }
@@ -507,8 +399,8 @@ function readAllLinks(artifactRef, moduleBinding) {
 
                     const primaryText = await readArtifact(artifactRef[i]);
                     // console.log('Primary Text:', primaryText, primaryText == 'Module' );
-                    if ( primaryText == 'Module' ) {
-                        mixedList = 'You have modules mixed in artifact selection';
+                    if ( primaryText == RM.Data.Formats.MODULE ) {
+                        mixedList = 'You have modules mixed with artifacts in selection';
                         alert(`You have modules mixed in artifact selection. Please select artifacts or Use Selected Modules Button.`);
                         totalArtifacts++;
                         continue;
@@ -556,6 +448,7 @@ function readAllLinks(artifactRef, moduleBinding) {
 
 // Function to get Module Binding ie. List of artifacts in the module
 async function readWholeModule() {
+    initWidget();
     let counts = { totalLinks: 0, totalArtifacts: 0, totalModules: 0 };
     toggleElementVisibility('createLinksContainer', 'none');
     // let totalModules = 0;
@@ -569,13 +462,12 @@ async function readWholeModule() {
             const jsonObject = res;
             // console.log('Response:', JSON.stringify(jsonObject));
             
-
             // Extract the format information
             const format = jsonObject.data?.ref?.format;
-            const artifactFormat = jsonObject.data?.values["http://www.ibm.com/xmlns/rdm/types/ArtifactFormat"];
+            const artifactFormat = jsonObject.data?.values[RM.Data.Attributes.FORMAT];
             
             // Check if it is of type "Module"
-            if (format && format.endsWith("#Module") && artifactFormat === "Module" && browserURLtop.includes('showArtifactPage')) {
+            if (format && artifactFormat === RM.Data.Formats.MODULE) {
                 console.log("This is a type of Module.");
             } else {
                 alert("You are not in a Module View.");
@@ -592,7 +484,7 @@ async function readWholeModule() {
                 // if artifact.uri isHeading value is not true and artifact's isStructureRoot is not true
                 if (!artifact.isHeading && !artifact.isStructureRoot) {
                     // Create an ArtifactRef object sub function to enable await
-                    const textArtifactRef = await createArtifactRef(artifact.uri, componentUri, moduleUri, 'Text');
+                    const textArtifactRef = await createArtifactRef(artifact.uri, componentUri, moduleUri, RM.Data.Formats.TEXT);
                     artifactRef.push(textArtifactRef);
                     // console.log('Text Artifact Uri:', JSON.stringify(textArtifactRef.uri));
                 } else if (artifact.isHeading) {
@@ -617,6 +509,7 @@ async function readWholeModule() {
 }
 
 async function readSelectedLinksOnClick() {
+    initWidget();
     setContainerText("moduleStatusContainer", '');
     let counts = { totalLinks: 0, totalArtifacts: 0, totalModules: 0 };
     // Check that there are objects in the artifactRef
@@ -637,6 +530,7 @@ async function readSelectedLinksOnClick() {
 }
 
 async function readAllModulesButtonOnClick() {
+    initWidget();
     let counts = { totalLinks: 0, totalArtifacts: 0, totalModules: 0 };
 
     // Check that we are in Module listing view
@@ -715,9 +609,6 @@ async function createLinksOnClick() {
             totalModules++;
         }
     }
-    // if (totalLinks === 0) {
-    //     setContainerText("statusContainer", 'No embedded Artifacts without Embeds Link found.');
-    // }
     // Handle pluralization
     let linkOrLinks = 'links';
     if (totalLinks === 1) { linkOrLinks = 'link'; }
