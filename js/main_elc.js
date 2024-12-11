@@ -226,16 +226,17 @@ function getLinksRaw(artifact) {
 // Function to read links of selected artifacts with await
 async function readArtifact(artifactRef) {
     return new Promise((resolve, reject) => {
-        RM.Data.getAttributes(artifactRef, [RM.Data.Attributes.PRIMARY_TEXT, RM.Data.Attributes.FORMAT], function(res) {
+        RM.Data.getAttributes(artifactRef, [RM.Data.Attributes.PRIMARY_TEXT, RM.Data.Attributes.FORMAT, RM.Data.Attributes.IDENTIFIER], function(res) {
             if (res.code !== RM.OperationResult.OPERATION_OK) {
                 reportError(res);
                 reject(res);
             } else {
                 // console.log('Artifact:', JSON.stringify(res));
                 const format = res.data[0].values[RM.Data.Attributes.FORMAT];
+                const id = res.data[0].values[RM.Data.Attributes.IDENTIFIER];
                 // console.log('Format:', format);
                 if (format !== 'Text') {
-                    console.log(format + ' Artifact is not a Text artifact. Skipping...');
+                    console.log(id + ' Artifact is not a Text artifact. Skipping...');
                     if ( format === RM.Data.Formats.MODULE ) resolve('Module');
                     else if (format == undefined) console.log('Format is undefined: ' + JSON.stringify(res.data[0]));
                     else resolve(null); // Resolve with null to indicate skipping
@@ -361,8 +362,8 @@ async function getModuleBinding(moduleUri) {
             for (let index = 1; index < data.length; index++) {
                 const item = data[index];
                 if ( // Check if the URI or boundArtifact contains Legacy items, skip for new installations
-                    ( !item.uri.includes("resources/BI_") && !item.uri.includes("resources/TX_") && !item.uri.includes("resources/WR_")) ||
-                    ( !item.boundArtifact.includes("resources/BI_") && !item.boundArtifact.includes("resources/TX_") && !item.boundArtifact.includes("resources/WR_"))
+                    ( !item.uri.includes("resources/BI_") && !item.uri.includes("resources/TX_") && !item.uri.includes("resources/CO_") && !item.uri.includes("esources/WR_")) ||
+                    ( !item.boundArtifact.includes("resources/BI_") && !item.boundArtifact.includes("resources/TX_") && !item.boundArtifact.includes("resources/CO_") && !item.boundArtifact.includes("esources/WR_"))
                 ) { // Exclude known non-legacy items
                     // Get Legacy
                     legacyArtifacts++;
