@@ -149,6 +149,10 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
                     // Get the URI of the wrapped item
                     const embeddedArtifactUri = filteredUrls[j].split('?')[0];
                     let targetUri = embeddedArtifactUri;
+                    // Check for Embedded CO_ artifacts
+                    if (embeddedArtifactUri.includes('resources/CO_')) { // This cannot be linked directly
+                        continue; // Skip this iteration
+                    }
                     // Check for Legacy URLs
                     if (!embeddedArtifactUri.includes('esources/WR_')) {
                         targetUri = await getCurrentUriCorrelator(embeddedArtifactUri);
