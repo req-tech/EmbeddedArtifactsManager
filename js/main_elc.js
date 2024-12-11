@@ -149,6 +149,11 @@ async function analyzeArtifact(baseStartRefUri, primaryText, componentUri, forma
                     // Get the URI of the wrapped item
                     const embeddedArtifactUri = filteredUrls[j].split('?')[0];
                     let targetUri = embeddedArtifactUri;
+                    // Check for Legacy URLs
+                    if (!embeddedArtifactUri.includes('esources/WR_')) {
+                        targetUri = await getCurrentUriCorrelator(embeddedArtifactUri);
+                    }
+                    // Create a new ArtifactRef object
                     let targetArtifactRef = new RM.ArtifactRef(targetUri, componentUri, null, format);
                     // if the URL contains 'wrappedResources' replace it with 'resources'
                     if (embeddedArtifactUri.includes('wrappedResources')) {
@@ -356,7 +361,7 @@ async function getModuleBinding(moduleUri) {
             for (let index = 1; index < data.length; index++) {
                 const item = data[index];
                 if ( // Check if the URI or boundArtifact contains Legacy items, skip for new installations
-                    ( !item.uri.includes("resources/I_") && !item.uri.includes("resources/TX_") && !item.uri.includes("resources/WR_")) ||
+                    ( !item.uri.includes("resources/BI_") && !item.uri.includes("resources/TX_") && !item.uri.includes("resources/WR_")) ||
                     ( !item.boundArtifact.includes("resources/BI_") && !item.boundArtifact.includes("resources/TX_") && !item.boundArtifact.includes("resources/WR_"))
                 ) { // Exclude known non-legacy items
                     // Get Legacy
