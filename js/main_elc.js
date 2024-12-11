@@ -274,32 +274,123 @@ async function deleteModuleLinks(start, linkType, target) {
     });
 }
 
-// Function to get module binding
-function getModuleBinding(moduleUri) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const response = await fetch(`${moduleUri}/structure`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'DoorsRP-Request-Type': 'public 2.0'
-                },
-                credentials: 'include'
-            });
-
+// Function to get current URI correlator for Legacy URLs
+function fetchCorrelatorData(url, headers, body) {
+    return new Promise((resolve, reject) => {
+        fetch(url, {
+            method: "POST",
+            headers: headers,
+            body: body,
+            credentials: "include" // Sends cookies for authentication
+        })
+        .then(response => {
             if (!response.ok) {
-                setContainerText('moduleStatusContainer','Text Artifacts in selection. Use Selected Items Button to process Text Format artifacts.');
-                setContainerText("statusContainer", '');
-                resolve(new Error('Failed to fetch module binding. Response status: ' + response.status));
+                console.log("Correlator error!:", response);
+                reject(new Error(`HTTP error! Status: ${response.status}`));
             } else {
-                const data = await response.json();
-                resolve(data);
+                return response.json(); // convert DNG object to regular json object
             }
-        } catch (error) {
-            console.error(error);
-            reject(error);
-        }
+        })
+        .then(cdata => {
+            console.log("Response:", cdata);
+            resolve(cdata); // Resolve with the response data
+        })
+        .catch(error => {
+            console.log("Error:", JSON.stringify(error));
+            reject(error); // Reject with the error
+        });
     });
+}
+
+// Resolve the Legacy Urls with correlator  https://www.ibm.com/support/pages/how-capture-current-url-over-legacy-ibm-doors-next-version-7x-forward
+async function getCurrentUriCorrelator(legacyUrl) {
+    // Get host Url from browser
+    const hostUrl = window.location.origin;
+    const url = `${hostUrl}/rm/correlator?mode=legacyToCurrent`;
+    const fullUrl = window.location.href;
+    const urlObj = new URL(fullUrl);
+    const params = new URLSearchParams(urlObj.hash.substring(1)); // Extract parameters from the hash part of the URL
+    const vvcConf = params.get('vvc.configuration'); // Ensure vvcConf is declared with const
+
+    const headers = {
+        "Content-Type": "application/json",
+        "DoorsRP-Request-Type": "private",
+        "vvc.configuration": vvcConf
+    };
+
+    const body = JSON.stringify([legacyUrl]); // Input passed dynamically
+    console.log("Correlator Legacy Url:", body);
+
+    try {
+        const cdata = await fetchCorrelatorData(url, headers, body);
+        return cdata; // Return response to the caller
+    } catch (error) {
+        throw error; // Rethrow for caller to handle
+    }
+}
+// Function to get module binding
+async function getModuleBinding(moduleUri) {
+    console.log('Fetching module binding for:', moduleUri);
+    try {
+        const response = await fetch(`${moduleUri}/structure`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'DoorsRP-Request-Type': 'public 2.0'
+            },
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch module binding. Response status: ' + JSON.stringify(response));
+        }
+
+        // Parse the JSON content from the response
+        const data = await response.json(); // convert DNG object to regular json object
+        let legacyArtifacts = 0;
+
+        // Check if the data contains Legacy objects
+        if (Array.isArray(data)) {
+            console.log("Checking for Legacy items...");
+
+            for (let index = 1; index < data.length; index++) {
+                const item = data[index];
+                if ( // Check if the URI or boundArtifact contains Legacy items, skip for new installations
+                    ( !item.uri.includes("resources/I_") && !item.uri.includes("resources/TX_") && !item.uri.includes("resources/WR_")) ||
+                    ( !item.boundArtifact.includes("resources/BI_") && !item.boundArtifact.includes("resources/TX_") && !item.boundArtifact.includes("resources/WR_"))
+                ) { // Exclude known non-legacy items
+                    // Get Legacy
+                    legacyArtifacts++;
+                    console.log(`Item ${index} contains Legacy item:`, item.uri);
+                    setContainerText("moduleStatusContainer", `Found ${legacyArtifacts} of ${data.length-1} legacy artifacts in the module. Widget might fail to create links for these.`);
+                    // if (index === 3) { // This is just to check the correlator for once
+                        try {
+                            const cdataUri = await getCurrentUriCorrelator(item.uri);
+                            const cdataBinding = await getCurrentUriCorrelator(item.boundArtifact);
+                            console.log('Correlator:', JSON.stringify(cdataUri));
+                            // Update the uri value with the new value from cdata
+                            const newUri = cdataUri[item.uri]; // Extract the new URI from the correlator response
+                            const newBinding = cdataBinding[item.boundArtifact]; // Extract the new URI from the correlator response    
+                            if (newUri) {
+                                item.uri = newUri; // Update the item's URI
+                            }
+                            if (newBinding) {
+                                item.boundArtifact = newBinding; // Update the item's boundArtifact
+                            }
+                        } catch (error) {
+                            console.error('Error in getCurrentUriCorrelator:', error);
+                        }
+                    // }
+                }
+            }
+        } else {
+            console.log("No array found. Full Data:", data);
+        }
+        return data;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
 }
 
 // Function to get bound artifact URI
@@ -361,7 +452,7 @@ function updateStatusAndButtons(counts) {
 
     setContainerText("statusContainer", `Found ${counts.totalLinks} missing ${linkOrLinks} for ${counts.totalArtifacts} ${artifactOrArtifacts} scanned${moduleInfo}.`);
     if ( counts.totalLinks !== 0) {
-        setContainerText("moduleStatusContainer", `Click Create Links Button to create missing links.`);
+        // setContainerText("moduleStatusContainer", `Click Create Links Button to create missing links.`);
         toggleElementVisibility('createLinksContainer', 'block');
     } else {
         setContainerText("moduleStatusContainer", ``);
