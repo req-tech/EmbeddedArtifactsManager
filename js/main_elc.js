@@ -430,6 +430,7 @@ function getLinks(artifact) {
 
 // Function with Promise to create missing links
 async function createEmdedsLink(baseStartRef, embeddedArtRef) {
+    console.log('Creating link between:', baseStartRef.uri, 'and', embeddedArtRef.uri);
     return new Promise((resolve, reject) => {
         RM.Data.createLink(baseStartRef, RM.Data.LinkTypes.EMBEDS, embeddedArtRef, function(response) {
             if (response.code !== RM.OperationResult.OPERATION_OK) {
