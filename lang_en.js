@@ -22,7 +22,7 @@ lang_json = `{
     },
     {
       "id": "str006a",
-      "text": "3. Click Reload to see newly created Embeds Links."
+      "text": "3. Click Refresh to see newly created Embeds Links."
     },
     {
       "id": "str007b",

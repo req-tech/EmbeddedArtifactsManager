@@ -77,11 +77,11 @@
 				<hr style='padding: 0 !important; margin: 0 !important;'/>
 
 				<div style="font-size:12px; display: none;" id='instructions_div'>
-					<b><span id='str003'><strong>How to use this widget?</strong></span> </b>  <br/>
+					<b><span id='str003'><h3>How to use this widget?</h3></span> </b>  <br/>
 					<ol>
 						<li> <span id='str004b'>1. Choose either selected artifacts in a module or the whole module</span> </li>	
 						<li> <span id='str005a'>2. Or Choose Selected Modules in Module listing View to process all of them</span> </li>
-						<li> <span id='str006a'>3. Click Reload to see newly created Embeds Links</span> </li>
+						<li> <span id='str006a'>3. Click Refresh to see newly created Embeds Links</span> </li>
 					</ol>
 					<span id='str007a'></span>
 					<hr style='padding: 0 !important; margin: 0 !important;'/>
@@ -111,7 +111,7 @@
 					<div class="bx--col custom-row bx--form__helper-text" id="moduleStatusContainer">
 					</div>
 					<div class="bx--col custom-row" id="reloadContainer" style="display: none;">
-						<button class="bx--btn bx--btn--primary bx--btn--md" style="width:100%;max-width:none;" id="reloadButton" onclick="clickRefreshButton()">Reload Page</button>
+						<button class="bx--btn bx--btn--primary bx--btn--md" style="width:100%;max-width:none;" id="reloadButton" onclick="clickRefreshButton()">Refresh</button>
 					</div>
 					<div class="bx--col custom-row" id="stopRunContainer" style="display: none;">
 						<button class="bx--btn bx--btn--danger bx--btn--md" style="width:100%;max-width:none;" onclick="stopRun()">Stop</button>
