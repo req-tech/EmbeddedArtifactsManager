@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<Module specificationVersion="1.7">
+<Module specificationVersion="1.8_RC8">
 <ModulePrefs title="Embedded Links Creator" height="130" scrolling="true">
 	<Require feature="com.ibm.rdm.rm.api"/>
 	<Require feature="dynamic-height"/>
