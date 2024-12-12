@@ -13,7 +13,7 @@ lang_json = `{
       "text": "How to use this widget?"
     },
     {
-      "id": "str004a",
+      "id": "str004b",
       "text": "1. Choose either selected artifacts in a module or the whole module"
     },
     {
